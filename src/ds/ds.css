@@ -1,0 +1,92 @@
+/* ATF Design System — CSS dos componentes, portado do _ds_bundle.js
+   (Button, IconButton, Input, Checkbox, Spinner). Só o tema claro: a jornada
+   não tem modo escuro. */
+
+.body3-medium { font-family: var(--font-brand); font-size: 16px; line-height: 22px; font-weight: 500; }
+.caption1-medium { font-family: var(--font-brand); font-size: 12px; line-height: 18px; font-weight: 500; }
+
+/* ---- Button ---- */
+.atf-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-lg,8px);border:0;cursor:pointer;transition:background-color .2s,color .2s,border-color .2s;
+  font-family:var(--font-brand);white-space:nowrap;user-select:none;outline:none;-webkit-tap-highlight-color:transparent;}
+.atf-btn:focus,.atf-btn:active{outline:none;}
+.atf-btn:focus-visible{outline:2px solid var(--color-neutral-20);outline-offset:2px;}
+.atf-btn:disabled{cursor:not-allowed;}
+.atf-btn--xs{height:32px;padding:0 12px;gap:4px;font-size:12px;line-height:18px;font-weight:500;}
+.atf-btn--sm{height:40px;padding:0 16px;gap:8px;font-size:12px;line-height:18px;font-weight:500;}
+.atf-btn--md{height:48px;padding:0 20px;gap:8px;font-size:14px;line-height:20px;font-weight:500;}
+.atf-btn--lg{height:56px;padding:0 24px;gap:8px;font-size:16px;line-height:22px;font-weight:500;}
+.atf-btn--full{width:100%;max-width:100%;white-space:normal;}
+.atf-btn--brand{background:var(--color-primary);color:var(--color-neutral-25);}
+.atf-btn--brand:hover:not(:disabled){background:var(--color-secondary-70);}
+.atf-btn--brand:active:not(:disabled){background:var(--color-secondary-40);}
+.atf-btn--neutral{background:var(--color-neutral-0);color:var(--color-neutral-100);}
+.atf-btn--neutral:hover:not(:disabled){background:var(--color-neutral-10);}
+.atf-btn--neutral:active:not(:disabled){background:var(--color-neutral-20);}
+.atf-btn--outline{background:var(--color-neutral-100);color:var(--color-neutral-20);border:1px solid var(--color-neutral-20);}
+.atf-btn--outline:hover:not(:disabled){background:var(--color-neutral-95);}
+.atf-btn--outline:active:not(:disabled){background:var(--color-neutral-90);}
+.atf-btn--text{background:transparent;color:var(--color-neutral-50);padding-left:8px;padding-right:8px;}
+.atf-btn--text:hover:not(:disabled){color:var(--color-neutral-80);}
+.atf-btn--text:active:not(:disabled){background:rgba(255,255,255,.5);}
+.atf-btn--brand:disabled,.atf-btn--neutral:disabled{background:var(--color-neutral-80);color:var(--color-neutral-50);}
+.atf-btn--outline:disabled{background:var(--color-neutral-100);border-color:var(--color-neutral-80);color:var(--color-neutral-80);}
+.atf-btn--text:disabled{color:var(--color-neutral-80);}
+
+/* ---- IconButton ---- */
+.atf-iconbtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-full,9999px);
+  border:0;cursor:pointer;transition:background-color .2s,color .2s;outline:none;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.atf-iconbtn:focus-visible{outline:2px solid var(--color-neutral-20);outline-offset:2px;}
+.atf-iconbtn:disabled{cursor:not-allowed;}
+.atf-iconbtn--sm{width:36px;height:36px;}
+.atf-iconbtn--md{width:40px;height:40px;}
+.atf-iconbtn--lg{width:48px;height:48px;}
+.atf-iconbtn--standard{background:transparent;color:var(--color-neutral-20);}
+.atf-iconbtn--standard:hover:not(:disabled){background:var(--color-neutral-95);}
+.atf-iconbtn--standard:active:not(:disabled){background:var(--color-neutral-90);}
+.atf-iconbtn--standard:disabled{background:transparent;color:var(--color-neutral-80);}
+
+/* ---- Input ---- */
+.atf-field{position:relative;width:100%;min-width:0;display:flex;flex-direction:column;row-gap:8px;max-height:56px;font-family:var(--font-brand);}
+.atf-field--tall{max-height:74px;}
+.atf-field__box{width:100%;position:relative;display:flex;align-items:center;border:1px solid var(--color-neutral-50);border-radius:4px;min-height:56px;transition:all .2s;margin:0;padding:0;min-inline-size:0;}
+.atf-field__box:hover{border-color:var(--color-neutral-20);}
+.atf-field__box:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 2px var(--color-primary);}
+.atf-field--disabled .atf-field__box,.atf-field--disabled .atf-field__box:hover{border-color:var(--color-neutral-80);box-shadow:none;}
+.atf-field--error .atf-field__box,.atf-field--error .atf-field__box:hover{border-color:var(--color-error-40);}
+.atf-field--error .atf-field__box:focus-within{border-color:var(--color-error-40);box-shadow:0 0 0 2px var(--color-error-40);}
+.atf-field__label{position:absolute;left:12px;top:-12px;padding:0 4px;background:var(--color-neutral-100);max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--color-neutral-20);}
+.atf-field--error .atf-field__label{color:var(--color-error-40);}
+.atf-field--disabled .atf-field__label{color:var(--color-neutral-80);}
+.atf-field__lefticon{width:auto;height:48px;min-width:0;padding-left:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--color-neutral-20);}
+.atf-field--disabled .atf-field__lefticon{color:var(--color-neutral-80);}
+.atf-field__input{appearance:none;width:100%;height:100%;min-width:0;background:transparent;border:0;padding:16px 0 16px 16px;color:var(--color-neutral-20);}
+.atf-field__input:focus{outline:none;border:none;}
+.atf-field__input::placeholder{color:var(--color-neutral-80);padding-left:4px;}
+.atf-field__input:disabled{color:var(--color-neutral-80);}
+.atf-field--hasleft .atf-field__input{padding-left:8px;}
+.atf-field__right{display:flex;align-items:center;justify-content:center;flex-shrink:0;padding-right:8px;}
+.atf-field__right--min{min-width:48px;}
+.atf-field__erroricon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;}
+.atf-field__erroricon-inner{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--color-error-40);}
+/* Ancorado no topo (o DS usa bottom:-20px, que sobrepõe o campo quando o texto quebra em 2 linhas). */
+.atf-field__hint{position:absolute;top:calc(100% + 2px);max-width:100%;overflow-wrap:break-word;padding:0 16px;color:var(--color-neutral-20);}
+.atf-field--error .atf-field__hint{color:var(--color-error-40);}
+.atf-field--disabled .atf-field__hint{color:var(--color-neutral-80);}
+
+/* ---- Checkbox ---- */
+.atf-check{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;width:24px;height:24px;}
+.atf-check--disabled{cursor:not-allowed;}
+.atf-check__hit{position:absolute;width:40px;height:40px;border-radius:9999px;transition:background-color .15s;}
+.atf-check:hover:not(.atf-check--disabled) .atf-check__hit{background:var(--color-neutral-95);}
+.atf-check__box{position:relative;z-index:1;width:18px;height:18px;border-radius:var(--radius-xs,2px);
+  border:2px solid var(--color-neutral-20);display:flex;align-items:center;justify-content:center;transition:background-color .15s,border-color .15s;color:var(--color-neutral-20);box-sizing:border-box;}
+.atf-check input:focus-visible ~ .atf-check__hit{background:var(--color-neutral-90);}
+.atf-check--on .atf-check__box{background:var(--color-primary);border-color:var(--color-primary);}
+.atf-check--error .atf-check__box{border-color:var(--color-error-40);}
+.atf-check--disabled .atf-check__box{border-color:var(--color-neutral-80);}
+.atf-check--disabled.atf-check--on .atf-check__box{background:var(--color-neutral-80);border-color:var(--color-neutral-80);color:var(--color-neutral-50);}
+
+/* ---- Spinner ---- */
+@keyframes atf-spin{to{transform:rotate(360deg)}}
+.atf-spinner{display:inline-block;animation:atf-spin 1s linear infinite;flex-shrink:0;}
