@@ -58,6 +58,9 @@ export function App({ api }: { api: ConsignadoApi }) {
         <div className="mx-auto box-content flex max-w-[1120px] flex-wrap justify-between gap-3 px-[clamp(16px,5vw,40px)] py-6 text-xs leading-normal text-neutral-40">
           <span>ATF SCD S.A. · Sociedade de Crédito Direto · Instituição 513 · Autorizada pelo Banco Central do Brasil</span>
           <div className="flex gap-4">
+            <a href="https://www.atf.com.br" target="_blank" rel="noopener noreferrer" className="atf-link !text-neutral-40 hover:!text-secondary-20">
+              www.atf.com.br
+            </a>
             <button type="button" className="atf-link !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("termos")}>
               Termos
             </button>
