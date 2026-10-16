@@ -70,6 +70,13 @@ export function Assinatura({ flow: { state: s, actions: a, derived: d }, propost
               disabled={s.signing}
             />
           </FieldSlot>
+          {/* TEMPORÁRIO (demonstração): remover antes de produção. */}
+          <p className="m-0 -mt-3 text-[13px] text-neutral-40">
+            Exemplo para testar: qualquer código de 6 dígitos, como 123456.{" "}
+            <button type="button" className="atf-link font-semibold" onClick={() => a.setOtp("123456")} disabled={s.signing}>
+              Preencher
+            </button>
+          </p>
           <TextButton onClick={() => a.enviarOtp(p.id)}>Reenviar código</TextButton>
         </div>
       )}

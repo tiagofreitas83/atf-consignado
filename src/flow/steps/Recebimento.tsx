@@ -1,5 +1,6 @@
 import { Button, Icon, Input, Spinner } from "../../ds";
 import type { Proposta } from "../../api/types";
+import { formatCpf } from "../../lib/cpf";
 import { horasUteisLabel } from "../../lib/format";
 import { TUTORIAL_PIX } from "../content";
 import { ActionBar, FieldSlot, StepColumn, StepHeading, TextButton, Tile } from "../ui";
@@ -28,6 +29,14 @@ export function Recebimento({ flow: { state: s, actions: a, derived: d }, propos
             autoComplete="off"
           />
         </FieldSlot>
+
+        {/* TEMPORÁRIO (demonstração): remover antes de produção. */}
+        <p className="m-0 -mt-3 text-[13px] text-neutral-40">
+          Exemplo para testar: CPF da {p.trabalhador.nome.split(" ")[0]}, {formatCpf(p.trabalhador.cpf)}.{" "}
+          <button type="button" className="atf-link font-semibold" onClick={() => a.setCpfPix(formatCpf(p.trabalhador.cpf))}>
+            Preencher
+          </button>
+        </p>
 
         <div aria-live="polite" className="flex flex-col">
           {s.pix === "idle" && (
