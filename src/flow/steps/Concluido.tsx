@@ -8,7 +8,7 @@ function CheckAnimado() {
   return (
     <div className="relative size-28" aria-hidden="true">
       <span className="cp-check-ring absolute inset-0 rounded-full bg-success-50 [animation:cpRing_.9s_.35s_ease-out_both]" />
-      <svg width="112" height="112" viewBox="0 0 112 112" className="relative block">
+      <svg width="112" height="112" viewBox="0 0 112 112" className="relative block overflow-visible">
         <circle cx="56" cy="56" r="56" className="fill-success-40 [transform-origin:56px_56px] [animation:cpPop_.5s_cubic-bezier(.2,.9,.3,1.3)_both]" />
         <path
           d="M34 58 L49 73 L79 41"
