@@ -1,6 +1,5 @@
 import { Button } from "../../ds";
 import type { Proposta as P } from "../../api/types";
-import { formatCpf } from "../../lib/cpf";
 import { brl, capitalize, mesAno, primeiroNome, taxaAmAa } from "../../lib/format";
 import { ActionBar, StepColumn } from "../ui";
 import type { Flow } from "../useConsignado";
@@ -35,11 +34,6 @@ export function Proposta({ flow: { actions: a }, proposta: p }: { flow: Flow; pr
           </div>
         ))}
       </dl>
-
-      <p className="m-0 text-[13px] leading-[1.6] text-neutral-40 text-pretty">
-        Solicitação feita por {p.trabalhador.nome}, CPF {formatCpf(p.trabalhador.cpf)}, vinculado a {p.empregador.razaoSocial}. A parcela respeita
-        a sua margem consignável e é repassada pelo empregador à ATF.
-      </p>
 
       <ActionBar
         back={

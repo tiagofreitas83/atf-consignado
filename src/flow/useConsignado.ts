@@ -6,6 +6,7 @@ import {
   type Canal,
   type ConsignadoApi,
   type Proposta,
+  type OrigemDocumento,
   type TipoDocumento,
   type ValidacaoPix,
 } from "../api/types";
@@ -25,6 +26,7 @@ export type Verificacao = {
 
 export type Documento = {
   tipo: TipoDocumento | null;
+  origem: OrigemDocumento | null;
   status: "idle" | "validando" | "ok" | "rejeitado";
   titular: string | null;
   erro: string | null;
@@ -35,7 +37,7 @@ export const ETAPAS_ASSINATURA = ["ccb", "email", "sms", "documento", "biometria
 export type EtapaAssinatura = (typeof ETAPAS_ASSINATURA)[number];
 
 const VERIFICACAO_INICIAL: Verificacao = { status: "pendente", codigo: "", erro: null };
-const DOCUMENTO_INICIAL: Documento = { tipo: null, status: "idle", titular: null, erro: null };
+const DOCUMENTO_INICIAL: Documento = { tipo: null, origem: null, status: "idle", titular: null, erro: null };
 const CHAVE_VERIFICACAO = { email: "emailVerif", sms: "smsVerif" } as const;
 
 // Versões dos textos aceitos, registradas junto com o consentimento.
@@ -310,22 +312,23 @@ export function useConsignado(api: ConsignadoApi) {
         }
       },
 
-      setTipoDocumento: (tipo: TipoDocumento) => set({ documento: { ...DOCUMENTO_INICIAL, tipo } }),
+      setTipoDocumento: (tipo: TipoDocumento) => set({ documento: { ...DOCUMENTO_INICIAL, tipo, origem: s.documento.origem } }),
+      setOrigemDocumento: (origem: OrigemDocumento) => set({ documento: { ...DOCUMENTO_INICIAL, tipo: s.documento.tipo, origem } }),
 
-      async validarDocumento(propostaId: string, arquivo: Blob) {
-        const tipo = s.documento.tipo;
-        if (!tipo) return;
+      async validarDocumento(propostaId: string, arquivos: Blob[]) {
+        const { tipo, origem } = s.documento;
+        if (!tipo || !origem) return;
         set({ documento: { ...s.documento, status: "validando", erro: null } });
         try {
-          const r = await api.validarDocumento({ propostaId, tipo, arquivo });
+          const r = await api.validarDocumento({ propostaId, tipo, origem, arquivos });
           set({
             documento:
               r.status === "ok"
-                ? { tipo, status: "ok", titular: r.titular, erro: null }
-                : { tipo, status: "rejeitado", titular: null, erro: r.motivo },
+                ? { tipo, origem, status: "ok", titular: r.titular, erro: null }
+                : { tipo, origem, status: "rejeitado", titular: null, erro: r.motivo },
           });
         } catch {
-          set({ documento: { tipo, status: "rejeitado", titular: null, erro: "Não foi possível validar agora. Tente novamente." } });
+          set({ documento: { tipo, origem, status: "rejeitado", titular: null, erro: "Não foi possível validar agora. Tente novamente." } });
         }
       },
 

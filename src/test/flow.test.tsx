@@ -38,9 +38,10 @@ async function assinarTudo(user: User) {
   await confirmarCodigo(user, "Código do e-mail");
   expect(screen.getByLabelText("Celular")).toHaveValue("(11) 98765-4321");
   await confirmarCodigo(user, "Código do SMS");
-  await user.click(await screen.findByText("CNH Digital"));
+  await user.click(await screen.findByText("CNH"));
+  await user.click(screen.getByText("Enviar PDF da carteira digital"));
   await user.click(screen.getByRole("button", { name: "usar documento de exemplo" }));
-  await screen.findByText("CNH Digital validada");
+  await screen.findByText("CNH validado pela carteira digital");
   await user.click(screen.getByRole("button", { name: /Iniciar reconhecimento/ }));
   // jsdom não tem câmera: cai no aviso e segue pelo modo simulado.
   await user.click(await screen.findByRole("button", { name: "Simular sem câmera" }));
@@ -134,6 +135,28 @@ describe("jornada", () => {
     await screen.findByText(/Código inválido. Confira o e-mail/);
     expect(screen.queryByLabelText("Código do SMS")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Assinar CCB/ })).toBeDisabled();
+  });
+
+  it("digitaliza o RG (frente e verso) pela câmera", async () => {
+    const user = await ateAssinatura();
+    await aceitarCcb(user);
+    await confirmarCodigo(user, "Código do e-mail");
+    await confirmarCodigo(user, "Código do SMS");
+    await user.click(await screen.findByText("RG"));
+    await user.click(screen.getByText("Fotografar o documento"));
+    await user.click(screen.getByRole("button", { name: /Abrir câmera/ }));
+    // jsdom não tem câmera: segue pelo modo simulado.
+    await user.click(await screen.findByRole("button", { name: "Simular sem câmera" }));
+    expect(screen.getByText("Encaixe a frente do RG na moldura")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Tirar foto da frente/ }));
+    await user.click(screen.getByRole("button", { name: /Usar foto e fotografar o verso/ }));
+    expect(screen.getByText("Encaixe o verso do RG na moldura")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Tirar foto do verso/ }));
+    await user.click(screen.getByRole("button", { name: /Tirar outra foto/ }));
+    await user.click(screen.getByRole("button", { name: /Tirar foto do verso/ }));
+    await user.click(screen.getByRole("button", { name: /Usar foto e enviar/ }));
+    await screen.findByText("RG validado por foto");
+    expect(screen.getByRole("button", { name: /Iniciar reconhecimento/ })).toBeInTheDocument();
   });
 
   it("passo 3 não pede mais e-mail nem celular", async () => {

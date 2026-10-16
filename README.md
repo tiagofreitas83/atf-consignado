@@ -4,8 +4,8 @@ Jornada de contratação de crédito consignado privado da ATF SCD S.A. (institu
 boas-vindas/consentimento → proposta → recebimento (Pix CPF) → assinatura da CCB → protocolo.
 
 A assinatura tem 5 etapas em sequência: revisar e aceitar a CCB → confirmar o e-mail (código) →
-confirmar o celular (código por SMS) → apresentar o documento da carteira digital (CNH Digital ou CIN,
-PDF com QR Code) → reconhecimento facial com prova de vida (oval no estilo FaceTec ZoOm). E-mail e
+confirmar o celular (código por SMS) → apresentar o documento com foto (CNH ou RG; enviado como PDF
+da carteira digital ou digitalizado com a câmera, frente e verso) → reconhecimento facial com prova de vida (oval no estilo FaceTec ZoOm). E-mail e
 celular vêm pré-preenchidos da proposta e são conferidos/editados dentro da própria etapa, antes do código.
 
 Responsividade: de 320px ao desktop, incluindo celular em paisagem. Safe-area (notch/barra de gestos),

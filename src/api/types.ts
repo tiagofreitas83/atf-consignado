@@ -38,7 +38,10 @@ export type Consentimento = {
 
 export type Canal = "email" | "sms";
 
-export type TipoDocumento = "cnh" | "cin";
+export type TipoDocumento = "cnh" | "rg";
+
+/** "pdf": arquivo exportado da carteira digital; "foto": frente e verso digitalizados com a câmera. */
+export type OrigemDocumento = "pdf" | "foto";
 
 export type ValidacaoDocumento =
   | { status: "ok"; tipo: TipoDocumento; titular: string }
@@ -64,10 +67,11 @@ export interface ConsignadoApi {
   /** POST /assinatura/codigo/confirmar — lança `CodigoInvalidoError` se não confere. */
   confirmarCodigo(req: { propostaId: string; canal: Canal; codigo: string }): Promise<void>;
   /**
-   * POST /assinatura/documento — documento exportado da carteira digital
-   * (CNH do Brasil ou gov.br). O back-end valida o QR Code/assinatura do PDF.
+   * POST /assinatura/documento — CNH ou RG. Com `origem: "pdf"`, um arquivo da
+   * carteira digital (o back-end valida o QR Code/assinatura); com `"foto"`,
+   * frente e verso (OCR, autenticidade e extração da foto para a biometria).
    */
-  validarDocumento(req: { propostaId: string; tipo: TipoDocumento; arquivo: Blob }): Promise<ValidacaoDocumento>;
+  validarDocumento(req: { propostaId: string; tipo: TipoDocumento; origem: OrigemDocumento; arquivos: Blob[] }): Promise<ValidacaoDocumento>;
   /** POST /assinatura/biometria — prova de vida + comparação com a foto do documento. */
   enviarBiometria(req: { propostaId: string; captura: Blob | null }): Promise<ResultadoBiometria>;
   /** POST /ccb/assinar — só é aceito com e-mail, SMS, documento e biometria confirmados. */

@@ -7,13 +7,13 @@ import { ETAPAS_ASSINATURA, type EtapaAssinatura, type Flow } from "../useConsig
 import { EtapaBiometria } from "./assinatura/EtapaBiometria";
 import { EtapaCcb } from "./assinatura/EtapaCcb";
 import { EtapaCodigo } from "./assinatura/EtapaCodigo";
-import { DOCUMENTOS, EtapaDocumento } from "./assinatura/EtapaDocumento";
+import { EtapaDocumento, resumoDocumento } from "./assinatura/EtapaDocumento";
 
 const TITULOS: Record<EtapaAssinatura, string> = {
   ccb: "Revise e aceite a CCB",
   email: "Confirme o seu e\u2011mail",
   sms: "Confirme o seu celular",
-  documento: "Apresente o seu documento digital",
+  documento: "Apresente um documento com foto",
   biometria: "Faça o reconhecimento facial",
 };
 
@@ -25,7 +25,7 @@ export function Assinatura({ flow, proposta: p }: { flow: Flow; proposta: Propos
     ccb: `CCB nº ${p.ccb.numero} lida e aceita`,
     email: `${emailMascarado(s.email)} confirmado`,
     sms: `${celularMascarado(d.phoneDigits)} confirmado`,
-    documento: s.documento.tipo ? `${DOCUMENTOS[s.documento.tipo].nome} validada` : "",
+    documento: resumoDocumento(s.documento.tipo, s.documento.origem),
     biometria: "Prova de vida concluída",
   };
 
@@ -52,7 +52,7 @@ export function Assinatura({ flow, proposta: p }: { flow: Flow; proposta: Propos
     <StepColumn label="Assinatura">
       <StepHeading
         title="Assine a sua Cédula de Crédito Bancário"
-        lead="Para a sua segurança, a assinatura confirma que é você: revise a CCB, confirme e-mail e celular, apresente o seu documento digital e faça o reconhecimento facial."
+        lead="Para a sua segurança, a assinatura confirma que é você: revise a CCB, confirme e-mail e celular, apresente um documento com foto e faça o reconhecimento facial."
       />
 
       <ol className="m-0 list-none rounded-card border border-neutral-90 px-[clamp(16px,4vw,24px)] py-2">
