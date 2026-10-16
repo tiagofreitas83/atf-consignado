@@ -5,7 +5,7 @@ import { cpfValido } from "../lib/cpf";
 import { emailValido } from "../lib/format";
 
 export type Step = 1 | 2 | 3 | 4 | 5;
-export type Doc = "termos" | "privacidade";
+export type Doc = "termos" | "privacidade" | "lgpd";
 export type PixStatus = "idle" | "loading" | "ok" | "notfound";
 
 // Versões dos textos aceitos, registradas junto com o consentimento.

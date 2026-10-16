@@ -3,7 +3,7 @@ import { Button, IconButton } from "../ds";
 import { DOCS } from "./content";
 import type { Doc } from "./useConsignado";
 
-/** Modal de Termos/Privacidade. Fecha no scrim, no X, em "Entendi" e com Esc. */
+/** Modal de Termos/Privacidade/LGPD. Fecha no scrim, no X, em "Entendi" e com Esc. */
 export function DocModal({ doc, onClose }: { doc: Doc; onClose: () => void }) {
   const titleId = useId();
   const okRef = useRef<HTMLButtonElement>(null);
@@ -26,7 +26,7 @@ export function DocModal({ doc, onClose }: { doc: Doc; onClose: () => void }) {
   }, []);
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-6">
+    <div onClick={onClose} className="fixed inset-0 z-20 flex items-center justify-center bg-[rgba(0,0,0,.4)] p-6">
       <div
         role="dialog"
         aria-modal="true"

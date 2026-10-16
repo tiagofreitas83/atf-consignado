@@ -16,6 +16,14 @@ export const DOCS = {
       "Você pode solicitar acesso, correção ou eliminação dos seus dados pelo e-mail do nosso encarregado de proteção de dados.",
     ],
   },
+  lgpd: {
+    title: "LGPD",
+    paras: [
+      "A Lei Geral de Proteção de Dados (Lei nº 13.709/2018) garante a você, como titular, o direito de saber quais dados pessoais a ATF SCD S.A. trata, para quais finalidades e com quem eles são compartilhados.",
+      "Você pode, a qualquer momento, solicitar a confirmação do tratamento, o acesso, a correção, a anonimização, a portabilidade ou a eliminação dos seus dados, além de revogar consentimentos concedidos, nos limites da lei e das obrigações regulatórias do Banco Central.",
+      "As solicitações são atendidas pelo nosso encarregado de proteção de dados (DPO), pelos canais oficiais de atendimento da ATF.",
+    ],
+  },
 } as const;
 
 export const TUTORIAL_PIX = [

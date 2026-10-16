@@ -119,5 +119,7 @@ describe("jornada", () => {
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "LGPD" }));
+    expect(screen.getByRole("dialog", { name: "LGPD" })).toBeInTheDocument();
   });
 });
