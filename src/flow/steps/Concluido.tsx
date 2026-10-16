@@ -1,4 +1,5 @@
-import { Button, Icon, type IconName } from "../../ds";
+import { useEffect, useState } from "react";
+import { Button, Icon, IconButton, type IconName } from "../../ds";
 import type { Proposta } from "../../api/types";
 import { brl, horasUteisLabel, primeiroNome } from "../../lib/format";
 import type { Flow } from "../useConsignado";
@@ -26,6 +27,14 @@ function CheckAnimado() {
 }
 
 export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; proposta: Proposta }) {
+  const protocolo = s.assinatura?.protocolo ?? "";
+  const [copiado, setCopiado] = useState(false);
+  useEffect(() => {
+    if (!copiado) return;
+    const t = window.setTimeout(() => setCopiado(false), 2000);
+    return () => window.clearTimeout(t);
+  }, [copiado]);
+  const copiar = () => navigator.clipboard?.writeText(protocolo).then(() => setCopiado(true), () => {});
   const horas = horasUteisLabel(p.horasUteisPagamento);
   const banco = s.pixResultado ? `${s.pixResultado.instituicao.nome} (${s.pixResultado.instituicao.codigo})` : "";
   const envios: { icon: IconName; title: string; text: string }[] = [
@@ -51,7 +60,13 @@ export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; pro
 
       <div className="box-border flex w-full flex-col gap-1 rounded-card bg-secondary-90 p-[clamp(16px,4vw,24px)] [animation:cpFade_.5s_.85s_ease_both]">
         <span className="text-[13px] text-neutral-40">Número do protocolo</span>
-        <span className="text-[clamp(22px,6.4vw,28px)] font-semibold tracking-[.02em] [overflow-wrap:anywhere]">{s.assinatura?.protocolo}</span>
+        <div className="flex items-center justify-center gap-2">
+          <span className="min-w-0 text-[clamp(22px,6.4vw,28px)] font-semibold tracking-[.02em] [overflow-wrap:anywhere]">{protocolo}</span>
+          <IconButton icon={copiado ? "check" : "copy"} onClick={copiar} aria-label={copiado ? "Protocolo copiado" : "Copiar protocolo"} />
+        </div>
+        <span aria-live="polite" className="sr-only">
+          {copiado ? "Protocolo copiado" : ""}
+        </span>
       </div>
 
       <ul className="m-0 box-border w-full list-none rounded-card border border-neutral-90 px-[clamp(16px,4vw,24px)] pt-[clamp(16px,4vw,24px)] pb-3 text-left [animation:cpFade_.5s_1s_ease_both]">
@@ -68,13 +83,10 @@ export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; pro
         ))}
       </ul>
 
-      {/* TODO: destinos de "Ver CCB assinada" (assinatura.ccbUrl) e "Acompanhar protocolo" pendentes de produto. */}
-      <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3 [animation:cpFade_.5s_1.1s_ease_both]">
+      {/* TODO: destino de "Ver CCB assinada" (assinatura.ccbUrl) pendente de produto. */}
+      <div className="w-full [animation:cpFade_.5s_1.1s_ease_both]">
         <Button variant="outline" size="lg" rightIcon="download" fullWidth>
           Ver CCB assinada
-        </Button>
-        <Button variant="brand" size="lg" rightIcon="arrowForward" fullWidth>
-          Acompanhar protocolo
         </Button>
       </div>
     </section>

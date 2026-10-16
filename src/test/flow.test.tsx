@@ -63,6 +63,12 @@ describe("jornada", () => {
     await screen.findByRole("heading", { name: /Pronto, Mariana!/ });
     expect(screen.getByText("CP 2026 1016 48213")).toBeInTheDocument();
     expect(window.location.search).toBe("?step=5");
+    expect(screen.queryByRole("button", { name: /Acompanhar protocolo/ })).not.toBeInTheDocument();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    await user.click(screen.getByRole("button", { name: "Copiar protocolo" }));
+    expect(writeText).toHaveBeenCalledWith("CP 2026 1016 48213");
+    await screen.findByRole("button", { name: "Protocolo copiado" });
   });
 
   it("CPF sem chave Pix abre o tutorial e permite validar de novo", async () => {

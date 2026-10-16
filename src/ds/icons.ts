@@ -11,6 +11,7 @@ export const ICONS = {
   mail: { v: "0 0 24 24", p: "<path d=\"M3 19V5H21V19H3ZM12 12.1155L4 6.8845V18H20V6.8845L12 12.1155ZM12 11L19.6923 6H4.30775L12 11ZM4 6.8845V6V18V6.8845Z\" fill=\"currentColor\" />" },
   close: { v: "0 0 24 24", p: "<path d=\"M6.40001 18.3078L5.69226 17.6L11.2923 12L5.69226 6.40001L6.40001 5.69226L12 11.2923L17.6 5.69226L18.3078 6.40001L12.7078 12L18.3078 17.6L17.6 18.3078L12 12.7078L6.40001 18.3078Z\" fill=\"currentColor\" />" },
   errorBold: { v: "0 0 24 24", p: "<path d=\"M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z\" fill=\"currentColor\" />" },
+  contentCopyBold: { v: "0 0 24 24", p: "<path d=\"M16.5 1H4.5C3.4 1 2.5 1.9 2.5 3V17H4.5V3H16.5V1ZM19.5 5H8.5C7.4 5 6.5 5.9 6.5 7V21C6.5 22.1 7.4 23 8.5 23H19.5C20.6 23 21.5 22.1 21.5 21V7C21.5 5.9 20.6 5 19.5 5ZM19.5 21H8.5V7H19.5V21Z\" fill=\"currentColor\" />" },
 } as const;
 
-export const ICON_ALIASES = { arrowForward: "arrowForwardBold", error: "errorBold" } as const;
+export const ICON_ALIASES = { arrowForward: "arrowForwardBold", error: "errorBold", copy: "contentCopyBold" } as const;
