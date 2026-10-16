@@ -1,7 +1,14 @@
 # ATF Consignado Privado
 
 Jornada de contratação de crédito consignado privado da ATF SCD S.A. (instituição 513), em 5 passos:
-boas-vindas/consentimento → proposta → recebimento (Pix CPF) → assinatura da CCB (OTP) → protocolo.
+boas-vindas/consentimento → proposta → recebimento (Pix CPF) → assinatura da CCB → protocolo.
+
+A assinatura tem 5 etapas em sequência: revisar e aceitar a CCB → confirmar o e-mail (código) →
+confirmar o celular (código por SMS) → apresentar o documento da carteira digital (CNH Digital ou CIN,
+PDF com QR Code) → reconhecimento facial com prova de vida (oval no estilo FaceTec ZoOm). Alterar
+e-mail ou celular no passo 3 desfaz a confirmação daquele canal.
+
+Link público: https://tiagofreitas83.github.io/atf-consignado/
 
 React 19 + Vite + TypeScript + Tailwind 4. A especificação de design está em [`HANDOFF.md`](HANDOFF.md).
 
@@ -13,7 +20,8 @@ npm run build
 ```
 
 Simulação no mock: `?pix=sem-chave` (a primeira validação Pix falha) e `?horas=N` (prazo do Pix).
-OTP `000000` simula código inválido.
+Código `000000` (e-mail ou SMS) simula código inválido. Sem câmera, a captura facial oferece
+"Simular sem câmera". Os atalhos "Preencher"/"usar documento de exemplo" são temporários.
 
 ## Estrutura
 
@@ -21,11 +29,14 @@ OTP `000000` simula código inválido.
   Checkbox, Spinner, Icon e máscaras), fiel ao `_ds_bundle.js` do handoff. Quando o DS virar pacote,
   troque os imports de `./ds` por ele.
 - `src/api/types.ts` — contrato com o back-end (`GET /proposta`, `POST /consentimentos`,
-  `POST /pix/validar`, `POST /ccb/otp`, `POST /ccb/assinar`). `src/api/mock.ts` implementa com dados fictícios.
+  `POST /pix/validar`, `POST /assinatura/codigo` e `/confirmar`, `POST /assinatura/documento`,
+  `POST /assinatura/biometria`, `POST /ccb/assinar`). `src/api/mock.ts` implementa com dados fictícios.
   Para produção, crie um `ConsignadoApi` HTTP e injete em `src/main.tsx`.
 - `src/flow/useConsignado.ts` — estado da jornada, gates de cada passo e espelho do passo na URL
   (`?step=N`; acesso direto ou voltar do navegador nunca pula pré-requisitos).
-- `src/flow/steps/` — as cinco telas; `DocModal.tsx` — Termos/Privacidade.
+- `src/flow/steps/` — as cinco telas; `steps/assinatura/` — as etapas da assinatura e a captura facial
+  (`FaceCapture.tsx`: a liveness é simulada por tempo; em produção, o SDK do fornecedor de biometria
+  conduz a captura e o back-end compara com a foto do documento). `DocModal.tsx` — Termos/Privacidade/LGPD.
 
 ## Diferenças em relação ao protótipo
 
@@ -34,7 +45,8 @@ OTP `000000` simula código inválido.
 - Helper/erro do Input ancorado pelo topo: no DS (`bottom:-20px`) um texto de 2 linhas sobrepõe o campo no celular.
 - Links "Termo"/"Política"/"Termos"/"Privacidade" são `<button>` com estilo de link (dentro do `<label>`
   do aceite não marcam o checkbox). Modal fecha com Esc e devolve o foco.
-- OTP inválido e falha ao carregar a proposta têm mensagem de erro (não existiam no protótipo).
+- A assinatura deixou de ser um OTP único: virou checklist de 5 etapas (CCB, e-mail, SMS, documento, facial).
+- Código inválido e falha ao carregar a proposta têm mensagem de erro (não existiam no protótipo).
 - "Reiniciar demonstração" não foi implementado (só existia no protótipo).
 
 ## Pendências de produto

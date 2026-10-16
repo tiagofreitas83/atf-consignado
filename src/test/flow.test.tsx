@@ -3,12 +3,63 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
 import { createMockApi } from "../api/mock";
+import { DemoSpeed } from "../flow/timing";
 
 const seguir = () => screen.getByRole("button", { name: /^Seguir$/ });
 
+function renderApp(pix: "cadastrado" | "sem-chave" = "cadastrado") {
+  return render(
+    <DemoSpeed.Provider value={0}>
+      <App api={createMockApi({ latency: 0, pixResultado: pix })} />
+    </DemoSpeed.Provider>,
+  );
+}
+
+type User = ReturnType<typeof userEvent.setup>;
+
+async function aceitarCcb(user: User) {
+  await user.click(screen.getByRole("checkbox"));
+  await user.click(screen.getByRole("button", { name: "Continuar" }));
+}
+
+async function confirmarCodigo(user: User, label: string) {
+  await user.type(await screen.findByLabelText(label), "123456");
+  await user.click(screen.getByRole("button", { name: "Confirmar código" }));
+}
+
+/** Percorre as 5 etapas da assinatura e assina. */
+async function assinarTudo(user: User) {
+  const assinar = screen.getByRole("button", { name: /Assinar CCB/ });
+  expect(assinar).toBeDisabled();
+  await aceitarCcb(user);
+  expect(screen.getByText("Enviamos um código de 6 dígitos por e-mail para", { exact: false })).toBeInTheDocument();
+  await confirmarCodigo(user, "Código do e-mail");
+  await confirmarCodigo(user, "Código do SMS");
+  await user.click(await screen.findByText("CNH Digital"));
+  await user.click(screen.getByRole("button", { name: "usar documento de exemplo" }));
+  await screen.findByText("CNH Digital validada");
+  await user.click(screen.getByRole("button", { name: /Iniciar reconhecimento/ }));
+  // jsdom não tem câmera: cai no aviso e segue pelo modo simulado.
+  await user.click(await screen.findByRole("button", { name: "Simular sem câmera" }));
+  await screen.findByText("Prova de vida concluída");
+  await screen.findByText(/Tudo pronto para assinar/);
+  expect(assinar).toBeEnabled();
+  await user.click(assinar);
+}
+
+async function ateAssinatura() {
+  const user = await ateRecebimento();
+  await user.type(screen.getByLabelText("Chave Pix (CPF)"), "12345678909");
+  await user.click(screen.getByRole("button", { name: "Validar chave Pix" }));
+  await screen.findByText("Chave validada");
+  await user.click(screen.getByRole("button", { name: /Seguir para assinatura/ }));
+  await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
+  return user;
+}
+
 async function ateRecebimento(pix: "cadastrado" | "sem-chave" = "cadastrado") {
   const user = userEvent.setup();
-  render(<App api={createMockApi({ latency: 0, pixResultado: pix })} />);
+  renderApp(pix);
   expect(seguir()).toBeDisabled();
   await user.click(screen.getByRole("checkbox"));
   await waitFor(() => expect(seguir()).toBeEnabled());
@@ -49,17 +100,7 @@ describe("jornada", () => {
 
     await user.click(proximo);
     await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
-    const enviar = screen.getByRole("button", { name: /Enviar código por SMS/ });
-    expect(enviar).toBeDisabled();
-    await user.click(screen.getByRole("checkbox"));
-    await user.click(enviar);
-
-    const otp = await screen.findByLabelText("Código de 6 dígitos");
-    expect(screen.getByText("Enviado por SMS para (11) •••••-4321")).toBeInTheDocument();
-    await user.type(otp, "12a3456789");
-    expect(otp).toHaveValue("123456");
-    await user.click(screen.getByRole("button", { name: /Assinar CCB/ }));
-
+    await assinarTudo(user);
     await screen.findByRole("heading", { name: /Pronto, Mariana!/ });
     expect(screen.getByText("CP 2026 1016 48213")).toBeInTheDocument();
     expect(window.location.search).toBe("?step=5");
@@ -81,17 +122,30 @@ describe("jornada", () => {
     await screen.findByText("Chave validada");
   });
 
-  it("OTP inválido mostra erro e não avança", async () => {
-    const user = await ateRecebimento();
-    await user.type(screen.getByLabelText("Chave Pix (CPF)"), "12345678909");
-    await user.click(screen.getByRole("button", { name: "Validar chave Pix" }));
-    await screen.findByText("Chave validada");
+  it("código do e-mail inválido mostra erro e não avança", async () => {
+    const user = await ateAssinatura();
+    await aceitarCcb(user);
+    await user.type(await screen.findByLabelText("Código do e-mail"), "000000");
+    await user.click(screen.getByRole("button", { name: "Confirmar código" }));
+    await screen.findByText(/Código inválido. Confira o e-mail/);
+    expect(screen.queryByLabelText("Código do SMS")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Assinar CCB/ })).toBeDisabled();
+  });
+
+  it("alterar o celular no passo 3 exige confirmar o SMS de novo", async () => {
+    const user = await ateAssinatura();
+    await aceitarCcb(user);
+    await confirmarCodigo(user, "Código do e-mail");
+    await confirmarCodigo(user, "Código do SMS");
+    await screen.findByText("Qual documento você vai apresentar?");
+    await user.click(screen.getByRole("button", { name: "Voltar" }));
+    const cel = await screen.findByLabelText("Celular");
+    await user.clear(cel);
+    await user.type(cel, "11912345678");
     await user.click(screen.getByRole("button", { name: /Seguir para assinatura/ }));
-    await user.click(await screen.findByRole("checkbox"));
-    await user.click(screen.getByRole("button", { name: /Enviar código por SMS/ }));
-    await user.type(await screen.findByLabelText("Código de 6 dígitos"), "000000");
-    await user.click(screen.getByRole("button", { name: /Assinar CCB/ }));
-    await screen.findByText(/Código inválido/);
+    expect(await screen.findByText(/\(11\) •••••-5678/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar código" })).toBeInTheDocument();
+    expect(screen.getByText(/m•••••@email.com confirmado/)).toBeInTheDocument();
   });
 
   it("acesso direto a ?step=4 cai no passo 1", async () => {

@@ -103,7 +103,15 @@ export function Recebimento({ flow: { state: s, actions: a, derived: d }, propos
       <div className="flex flex-col gap-3">
         <span className="text-[15px] font-semibold">Contato para acompanhar a contratação</span>
         <FieldSlot>
-          <Input label="E-mail" type="email" value={s.email} onChange={a.setEmail} errors={d.emailErro} autoComplete="email" />
+          <Input
+            label="E-mail"
+            type="email"
+            value={s.email}
+            onChange={a.setEmail}
+            errors={d.emailErro}
+            description="Você receberá um código para confirmar o e-mail e a CCB assinada."
+            autoComplete="email"
+          />
         </FieldSlot>
         <FieldSlot>
           <Input
@@ -113,7 +121,7 @@ export function Recebimento({ flow: { state: s, actions: a, derived: d }, propos
             onChange={a.setPhone}
             mask="phone"
             errors={d.phoneErro}
-            description="Você receberá o código de assinatura e o protocolo por SMS."
+            description="Você receberá um código para confirmar o celular e o protocolo por SMS."
             autoComplete="tel-national"
           />
         </FieldSlot>

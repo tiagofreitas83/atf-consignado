@@ -36,7 +36,17 @@ export type Consentimento = {
   versaoPrivacidade: string;
 };
 
-export class OtpInvalidoError extends Error {
+export type Canal = "email" | "sms";
+
+export type TipoDocumento = "cnh" | "cin";
+
+export type ValidacaoDocumento =
+  | { status: "ok"; tipo: TipoDocumento; titular: string }
+  | { status: "rejeitado"; motivo: string };
+
+export type ResultadoBiometria = { status: "ok" } | { status: "falhou"; motivo: string };
+
+export class CodigoInvalidoError extends Error {
   constructor() {
     super("Código inválido");
   }
@@ -49,8 +59,17 @@ export interface ConsignadoApi {
   registrarConsentimento(c: Consentimento): Promise<void>;
   /** POST /pix/validar — consulta DICT da chave CPF; 404 → `notfound`. */
   validarPix(req: { propostaId: string; cpf: string }): Promise<ValidacaoPix>;
-  /** POST /ccb/otp */
-  enviarOtp(req: { propostaId: string; email: string; celular: string }): Promise<void>;
-  /** POST /ccb/assinar — lança `OtpInvalidoError` se o código não confere. */
-  assinar(req: { propostaId: string; otp: string }): Promise<Assinatura>;
+  /** POST /assinatura/codigo — envia o código de 6 dígitos por e-mail ou SMS. */
+  enviarCodigo(req: { propostaId: string; canal: Canal; destino: string }): Promise<void>;
+  /** POST /assinatura/codigo/confirmar — lança `CodigoInvalidoError` se não confere. */
+  confirmarCodigo(req: { propostaId: string; canal: Canal; codigo: string }): Promise<void>;
+  /**
+   * POST /assinatura/documento — documento exportado da carteira digital
+   * (CNH do Brasil ou gov.br). O back-end valida o QR Code/assinatura do PDF.
+   */
+  validarDocumento(req: { propostaId: string; tipo: TipoDocumento; arquivo: Blob }): Promise<ValidacaoDocumento>;
+  /** POST /assinatura/biometria — prova de vida + comparação com a foto do documento. */
+  enviarBiometria(req: { propostaId: string; captura: Blob | null }): Promise<ResultadoBiometria>;
+  /** POST /ccb/assinar — só é aceito com e-mail, SMS, documento e biometria confirmados. */
+  assinar(req: { propostaId: string }): Promise<Assinatura>;
 }

@@ -10,5 +10,6 @@ export default defineConfig({
   // node_modules é symlink para node_modules.nosync (iCloud); sem isso o Vite
   // não reconhece as deps como node_modules e não pré-empacota o React.
   resolve: { preserveSymlinks: true },
+  server: { watch: { ignored: ["**/node_modules.nosync/**"] } },
   test: { environment: "jsdom", css: false, include: ["src/**/*.test.{ts,tsx}"], setupFiles: ["src/test/setup.ts"] },
 });

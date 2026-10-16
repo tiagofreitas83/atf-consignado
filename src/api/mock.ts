@@ -1,4 +1,4 @@
-import { OtpInvalidoError, type ConsignadoApi, type Proposta } from "./types";
+import { CodigoInvalidoError, type ConsignadoApi, type Proposta } from "./types";
 
 type MockOptions = {
   /** "sem-chave": a primeira validação Pix devolve `notfound`. */
@@ -60,12 +60,23 @@ export function createMockApi({ pixResultado = "cadastrado", horasUteis = 2, lat
         titularMascarado: "Mariana S. L. · CPF ***.456.789-**",
       };
     },
-    async enviarOtp() {
+    async enviarCodigo() {
       await wait(400 * latency);
     },
-    async assinar({ otp }) {
+    async confirmarCodigo({ codigo }) {
+      await wait(600 * latency);
+      if (codigo === "000000") throw new CodigoInvalidoError();
+    },
+    async validarDocumento({ tipo }) {
+      await wait(1600 * latency);
+      return { status: "ok", tipo, titular: proposta.trabalhador.nome };
+    },
+    async enviarBiometria() {
+      await wait(1500 * latency);
+      return { status: "ok" };
+    },
+    async assinar() {
       await wait(1200 * latency);
-      if (otp === "000000") throw new OtpInvalidoError();
       return { protocolo: "CP 2026 1016 48213", ccbUrl: "#" };
     },
   };

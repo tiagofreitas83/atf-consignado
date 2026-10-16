@@ -1,12 +1,42 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { maskPhoneBR, onlyDigits } from "../ds";
-import { OtpInvalidoError, type Assinatura, type ConsignadoApi, type Proposta, type ValidacaoPix } from "../api/types";
+import {
+  CodigoInvalidoError,
+  type Assinatura,
+  type Canal,
+  type ConsignadoApi,
+  type Proposta,
+  type TipoDocumento,
+  type ValidacaoPix,
+} from "../api/types";
 import { cpfValido } from "../lib/cpf";
 import { emailValido } from "../lib/format";
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 export type Doc = "termos" | "privacidade" | "lgpd";
 export type PixStatus = "idle" | "loading" | "ok" | "notfound";
+
+/** Confirmação de um canal (e-mail ou SMS) por código de 6 dígitos. */
+export type Verificacao = {
+  status: "pendente" | "enviando" | "enviado" | "confirmando" | "ok";
+  codigo: string;
+  erro: string | null;
+};
+
+export type Documento = {
+  tipo: TipoDocumento | null;
+  status: "idle" | "validando" | "ok" | "rejeitado";
+  titular: string | null;
+  erro: string | null;
+};
+
+/** Etapas da assinatura, na ordem. */
+export const ETAPAS_ASSINATURA = ["ccb", "email", "sms", "documento", "biometria"] as const;
+export type EtapaAssinatura = (typeof ETAPAS_ASSINATURA)[number];
+
+const VERIFICACAO_INICIAL: Verificacao = { status: "pendente", codigo: "", erro: null };
+const DOCUMENTO_INICIAL: Documento = { tipo: null, status: "idle", titular: null, erro: null };
+const CHAVE_VERIFICACAO = { email: "emailVerif", sms: "smsVerif" } as const;
 
 // Versões dos textos aceitos, registradas junto com o consentimento.
 const VERSAO_TERMOS = "2026-10-provisorio";
@@ -27,11 +57,14 @@ type State = {
   email: string;
   phone: string;
   ccbAceite: boolean;
-  otpEnviando: boolean;
-  otpSent: boolean;
-  otp: string;
-  otpErro: string | null;
+  ccbRevisada: boolean;
+  emailVerif: Verificacao;
+  smsVerif: Verificacao;
+  documento: Documento;
+  biometria: "pendente" | "enviando" | "ok" | "falhou";
+  biometriaErro: string | null;
   signing: boolean;
+  assinaturaErro: string | null;
   assinatura: Assinatura | null;
 };
 
@@ -40,6 +73,9 @@ type Action =
   | { type: "propostaErro" }
   | { type: "set"; patch: Partial<State> }
   | { type: "cpfPix"; value: string }
+  | { type: "email"; value: string }
+  | { type: "phone"; value: string }
+  | { type: "verificacao"; canal: Canal; patch: Partial<Verificacao> }
   | { type: "pixResultado"; resultado: ValidacaoPix };
 
 const initial: State = {
@@ -57,11 +93,14 @@ const initial: State = {
   email: "",
   phone: "",
   ccbAceite: false,
-  otpEnviando: false,
-  otpSent: false,
-  otp: "",
-  otpErro: null,
+  ccbRevisada: false,
+  emailVerif: VERIFICACAO_INICIAL,
+  smsVerif: VERIFICACAO_INICIAL,
+  documento: DOCUMENTO_INICIAL,
+  biometria: "pendente",
+  biometriaErro: null,
   signing: false,
+  assinaturaErro: null,
   assinatura: null,
 };
 
@@ -84,6 +123,15 @@ function reducer(s: State, a: Action): State {
     case "cpfPix":
       // Qualquer edição da chave invalida a validação anterior.
       return { ...s, cpfPix: a.value, pix: "idle", pixResultado: null };
+    case "email":
+      // Trocar o contato desfaz a confirmação daquele canal.
+      return a.value === s.email ? s : { ...s, email: a.value, emailVerif: VERIFICACAO_INICIAL };
+    case "phone":
+      return a.value === s.phone ? s : { ...s, phone: a.value, smsVerif: VERIFICACAO_INICIAL };
+    case "verificacao": {
+      const k = CHAVE_VERIFICACAO[a.canal];
+      return { ...s, [k]: { ...s[k], ...a.patch } };
+    }
     case "pixResultado":
       return a.resultado.status === "ok"
         ? { ...s, pix: "ok", pixResultado: a.resultado }
@@ -140,6 +188,14 @@ export function useConsignado(api: ConsignadoApi) {
   const cpfDoTitular = cpfDigits.length === 11 && cpfValido(cpfDigits) && cpfDigits === titular;
   const recebimentoOk = cpfDoTitular && s.pix === "ok" && emailOk && phoneOk;
   const limite = maxStep(s, recebimentoOk);
+  const concluidas: Record<EtapaAssinatura, boolean> = {
+    ccb: s.ccbRevisada,
+    email: s.emailVerif.status === "ok",
+    sms: s.smsVerif.status === "ok",
+    documento: s.documento.status === "ok",
+    biometria: s.biometria === "ok",
+  };
+  const etapaAtual: EtapaAssinatura | null = ETAPAS_ASSINATURA.find((e) => !concluidas[e]) ?? null;
 
   // Espelha o passo na URL; voltar/avançar do navegador respeitam os gates.
   const limiteRef = useRef(limite);
@@ -167,6 +223,19 @@ export function useConsignado(api: ConsignadoApi) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [set],
+  );
+
+  const enviarCodigo = useCallback(
+    async (propostaId: string, canal: Canal) => {
+      dispatch({ type: "verificacao", canal, patch: { status: "enviando", codigo: "", erro: null } });
+      try {
+        await api.enviarCodigo({ propostaId, canal, destino: canal === "email" ? s.email : phoneDigits });
+        dispatch({ type: "verificacao", canal, patch: { status: "enviado" } });
+      } catch {
+        dispatch({ type: "verificacao", canal, patch: { status: "pendente", erro: "Não conseguimos enviar o código. Tente novamente." } });
+      }
+    },
+    [api, s.email, phoneDigits],
   );
 
   const actions = useMemo(
@@ -207,34 +276,81 @@ export function useConsignado(api: ConsignadoApi) {
       },
 
       toggleTutorial: () => set({ tutorial: !s.tutorial }),
-      setEmail: (email: string) => set({ email }),
-      setPhone: (phone: string) => set({ phone }),
+      setEmail: (value: string) => dispatch({ type: "email", value }),
+      setPhone: (value: string) => dispatch({ type: "phone", value }),
 
       setCcbAceite: (ccbAceite: boolean) => set({ ccbAceite }),
 
-      async enviarOtp(propostaId: string) {
-        set({ otpEnviando: true });
+      enviarCodigo,
+
+      /** Aceite da CCB revisada; já dispara o código por e-mail. */
+      continuarCcb(propostaId: string) {
+        set({ ccbRevisada: true });
+        if (s.emailVerif.status !== "ok") enviarCodigo(propostaId, "email");
+        else if (s.smsVerif.status !== "ok") enviarCodigo(propostaId, "sms");
+      },
+
+      setCodigo: (canal: Canal, codigo: string) =>
+        dispatch({ type: "verificacao", canal, patch: { codigo: onlyDigits(codigo).slice(0, 6), erro: null } }),
+
+      async confirmarCodigo(propostaId: string, canal: Canal) {
+        const v = canal === "email" ? s.emailVerif : s.smsVerif;
+        dispatch({ type: "verificacao", canal, patch: { status: "confirmando", erro: null } });
         try {
-          await api.enviarOtp({ propostaId, email: s.email, celular: phoneDigits });
-          set({ otpSent: true, otp: "", otpErro: null });
-        } finally {
-          set({ otpEnviando: false });
+          await api.confirmarCodigo({ propostaId, canal, codigo: v.codigo });
+          dispatch({ type: "verificacao", canal, patch: { status: "ok" } });
+          // Confirmado o e-mail, o SMS já sai em seguida.
+          if (canal === "email" && s.smsVerif.status === "pendente") enviarCodigo(propostaId, "sms");
+        } catch (e) {
+          const onde = canal === "email" ? "o e-mail" : "o SMS";
+          dispatch({
+            type: "verificacao",
+            canal,
+            patch: {
+              status: "enviado",
+              erro: e instanceof CodigoInvalidoError ? `Código inválido. Confira ${onde} e tente novamente.` : "Não foi possível confirmar agora. Tente novamente.",
+            },
+          });
         }
       },
 
-      setOtp: (otp: string) => set({ otp: onlyDigits(otp).slice(0, 6), otpErro: null }),
+      setTipoDocumento: (tipo: TipoDocumento) => set({ documento: { ...DOCUMENTO_INICIAL, tipo } }),
+
+      async validarDocumento(propostaId: string, arquivo: Blob) {
+        const tipo = s.documento.tipo;
+        if (!tipo) return;
+        set({ documento: { ...s.documento, status: "validando", erro: null } });
+        try {
+          const r = await api.validarDocumento({ propostaId, tipo, arquivo });
+          set({
+            documento:
+              r.status === "ok"
+                ? { tipo, status: "ok", titular: r.titular, erro: null }
+                : { tipo, status: "rejeitado", titular: null, erro: r.motivo },
+          });
+        } catch {
+          set({ documento: { tipo, status: "rejeitado", titular: null, erro: "Não foi possível validar agora. Tente novamente." } });
+        }
+      },
+
+      async enviarBiometria(propostaId: string, captura: Blob | null) {
+        set({ biometria: "enviando", biometriaErro: null });
+        try {
+          const r = await api.enviarBiometria({ propostaId, captura });
+          set(r.status === "ok" ? { biometria: "ok" } : { biometria: "falhou", biometriaErro: r.motivo });
+        } catch {
+          set({ biometria: "falhou", biometriaErro: "Não foi possível concluir o reconhecimento. Tente novamente." });
+        }
+      },
 
       async assinar(propostaId: string) {
-        set({ signing: true, otpErro: null });
+        set({ signing: true, assinaturaErro: null });
         try {
-          const assinatura = await api.assinar({ propostaId, otp: s.otp });
+          const assinatura = await api.assinar({ propostaId });
           set({ assinatura, signing: false });
           go(5);
-        } catch (e) {
-          set({
-            signing: false,
-            otpErro: e instanceof OtpInvalidoError ? "Código inválido. Confira o SMS e tente novamente." : "Não foi possível assinar agora. Tente novamente.",
-          });
+        } catch {
+          set({ signing: false, assinaturaErro: "Não foi possível assinar agora. Tente novamente." });
         }
       },
 
@@ -243,7 +359,7 @@ export function useConsignado(api: ConsignadoApi) {
       back: () => go((s.step - 1) as Step),
       carregarProposta,
     }),
-    [api, go, set, s.tutorial, s.email, s.otp, s.step, limite, phoneDigits, carregarProposta],
+    [api, go, set, s.tutorial, s.step, s.emailVerif, s.smsVerif, s.documento, limite, enviarCodigo, carregarProposta],
   );
 
   return {
@@ -257,6 +373,8 @@ export function useConsignado(api: ConsignadoApi) {
       emailErro: s.email && !emailOk ? "Informe um e-mail válido." : undefined,
       phoneErro: phoneDigits.length && !phoneOk ? "Informe o celular com DDD." : undefined,
       recebimentoOk,
+      concluidas,
+      etapaAtual,
     },
   };
 }
