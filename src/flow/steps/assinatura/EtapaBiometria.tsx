@@ -31,7 +31,7 @@ export function EtapaBiometria({ flow: { state: s, actions: a }, propostaId }: {
   }
 
   return (
-    <div className="flex flex-col items-start gap-4">
+    <div className="flex flex-col items-stretch gap-4 sm:items-start">
       <p className="m-0 text-sm leading-normal text-neutral-40 text-pretty">
         Vamos confirmar que é você quem está contratando. Leva poucos segundos: centralize o rosto no oval e, quando pedirmos, aproxime a câmera.
       </p>
@@ -45,7 +45,7 @@ export function EtapaBiometria({ flow: { state: s, actions: a }, propostaId }: {
           <span role="alert">{s.biometriaErro}</span>
         </Tile>
       )}
-      <Button variant="brand" size="md" rightIcon="photoCamera" onClick={() => setCapturando(true)}>
+      <Button variant="brand" size="md" rightIcon="photoCamera" className="w-full sm:w-auto" onClick={() => setCapturando(true)}>
         {s.biometria === "falhou" ? "Tentar novamente" : "Iniciar reconhecimento"}
       </Button>
     </div>

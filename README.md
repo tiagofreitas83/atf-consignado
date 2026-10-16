@@ -5,8 +5,11 @@ boas-vindas/consentimento → proposta → recebimento (Pix CPF) → assinatura 
 
 A assinatura tem 5 etapas em sequência: revisar e aceitar a CCB → confirmar o e-mail (código) →
 confirmar o celular (código por SMS) → apresentar o documento da carteira digital (CNH Digital ou CIN,
-PDF com QR Code) → reconhecimento facial com prova de vida (oval no estilo FaceTec ZoOm). Alterar
-e-mail ou celular no passo 3 desfaz a confirmação daquele canal.
+PDF com QR Code) → reconhecimento facial com prova de vida (oval no estilo FaceTec ZoOm). E-mail e
+celular vêm pré-preenchidos da proposta e são conferidos/editados dentro da própria etapa, antes do código.
+
+Responsividade: de 320px ao desktop, incluindo celular em paisagem. Safe-area (notch/barra de gestos),
+`dvh`, hover só em dispositivos com mouse, alvos de toque ≥ 44px, modal como folha inferior no celular.
 
 Link público: https://tiagofreitas83.github.io/atf-consignado/
 

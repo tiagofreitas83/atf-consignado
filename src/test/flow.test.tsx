@@ -23,6 +23,7 @@ async function aceitarCcb(user: User) {
 }
 
 async function confirmarCodigo(user: User, label: string) {
+  await user.click(await screen.findByRole("button", { name: "Enviar código" }));
   await user.type(await screen.findByLabelText(label), "123456");
   await user.click(screen.getByRole("button", { name: "Confirmar código" }));
 }
@@ -32,8 +33,10 @@ async function assinarTudo(user: User) {
   const assinar = screen.getByRole("button", { name: /Assinar CCB/ });
   expect(assinar).toBeDisabled();
   await aceitarCcb(user);
-  expect(screen.getByText("Enviamos um código de 6 dígitos por e-mail para", { exact: false })).toBeInTheDocument();
+  // E-mail e celular vêm da proposta, pré-preenchidos, para conferir antes do envio.
+  expect(screen.getByLabelText("E-mail")).toHaveValue("mariana.lima@email.com");
   await confirmarCodigo(user, "Código do e-mail");
+  expect(screen.getByLabelText("Celular")).toHaveValue("(11) 98765-4321");
   await confirmarCodigo(user, "Código do SMS");
   await user.click(await screen.findByText("CNH Digital"));
   await user.click(screen.getByRole("button", { name: "usar documento de exemplo" }));
@@ -125,6 +128,7 @@ describe("jornada", () => {
   it("código do e-mail inválido mostra erro e não avança", async () => {
     const user = await ateAssinatura();
     await aceitarCcb(user);
+    await user.click(screen.getByRole("button", { name: "Enviar código" }));
     await user.type(await screen.findByLabelText("Código do e-mail"), "000000");
     await user.click(screen.getByRole("button", { name: "Confirmar código" }));
     await screen.findByText(/Código inválido. Confira o e-mail/);
@@ -132,19 +136,31 @@ describe("jornada", () => {
     expect(screen.getByRole("button", { name: /Assinar CCB/ })).toBeDisabled();
   });
 
-  it("alterar o celular no passo 3 exige confirmar o SMS de novo", async () => {
+  it("passo 3 não pede mais e-mail nem celular", async () => {
+    await ateRecebimento();
+    expect(screen.queryByLabelText("E-mail")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Celular")).not.toBeInTheDocument();
+  });
+
+  it("e-mail inválido não deixa enviar o código; alterar o celular reabre a edição", async () => {
     const user = await ateAssinatura();
     await aceitarCcb(user);
+    const email = screen.getByLabelText("E-mail");
+    await user.clear(email);
+    await user.type(email, "mariana@");
+    expect(screen.getByText("Informe um e-mail válido.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar código" })).toBeDisabled();
+    await user.type(email, "email.com");
     await confirmarCodigo(user, "Código do e-mail");
-    await confirmarCodigo(user, "Código do SMS");
-    await screen.findByText("Qual documento você vai apresentar?");
-    await user.click(screen.getByRole("button", { name: "Voltar" }));
-    const cel = await screen.findByLabelText("Celular");
+
+    await user.click(await screen.findByRole("button", { name: "Enviar código" }));
+    await screen.findByLabelText("Código do SMS");
+    await user.click(screen.getByRole("button", { name: "Alterar celular" }));
+    const cel = screen.getByLabelText("Celular");
     await user.clear(cel);
     await user.type(cel, "11912345678");
-    await user.click(screen.getByRole("button", { name: /Seguir para assinatura/ }));
-    expect(await screen.findByText(/\(11\) •••••-5678/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enviar código" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Enviar código" }));
+    expect(await screen.findByText("(11) •••••-5678")).toBeInTheDocument();
     expect(screen.getByText(/m•••••@email.com confirmado/)).toBeInTheDocument();
   });
 

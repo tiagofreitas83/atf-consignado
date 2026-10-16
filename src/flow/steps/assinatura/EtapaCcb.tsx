@@ -30,7 +30,7 @@ export function EtapaCcb({ flow: { state: s, actions: a }, proposta: p }: { flow
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 bg-neutral-95 px-[clamp(16px,4vw,24px)] py-4">
           <span className="text-sm font-semibold">CCB nº {p.ccb.numero}</span>
           {/* TODO: destino do documento completo ainda não definido pelo produto. */}
-          <button type="button" className="atf-link text-[13px] font-semibold">
+          <button type="button" className="atf-link -my-3 inline-flex min-h-11 items-center text-[13px] font-semibold">
             Ler documento completo
           </button>
         </div>
@@ -50,7 +50,7 @@ export function EtapaCcb({ flow: { state: s, actions: a }, proposta: p }: { flow
       </label>
 
       <div className="flex">
-        <Button variant="brand" size="md" rightIcon="arrowForward" disabled={!s.ccbAceite} onClick={() => a.continuarCcb(p.id)}>
+        <Button variant="brand" size="md" rightIcon="arrowForward" className="w-full sm:w-auto" disabled={!s.ccbAceite} onClick={a.continuarCcb}>
           Continuar
         </Button>
       </div>

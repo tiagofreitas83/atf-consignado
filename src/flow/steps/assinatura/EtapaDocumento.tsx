@@ -52,7 +52,7 @@ export function EtapaDocumento({ flow: { state: s, actions: a }, propostaId }: {
         </Tile>
       ) : (
         doc.tipo && (
-          <div className="flex flex-col items-start gap-3">
+          <div className="flex flex-col items-stretch gap-3 sm:items-start">
             <input
               ref={arquivoRef}
               type="file"
@@ -65,7 +65,7 @@ export function EtapaDocumento({ flow: { state: s, actions: a }, propostaId }: {
                 if (f) a.validarDocumento(propostaId, f);
               }}
             />
-            <Button variant="brand" size="md" rightIcon="uploadFile" onClick={() => arquivoRef.current?.click()}>
+            <Button variant="brand" size="md" rightIcon="uploadFile" className="w-full sm:w-auto" onClick={() => arquivoRef.current?.click()}>
               Enviar PDF do documento
             </Button>
             {/* TEMPORÁRIO (demonstração): remover antes de produção. */}

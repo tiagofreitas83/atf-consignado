@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Button, Icon } from "../../../ds";
 import { DemoSpeed } from "../../timing";
+import { TextButton } from "../../ui";
 
 type Fase = "camera" | "enquadre" | "aproxime" | "analisando" | "erro";
 
@@ -131,17 +132,13 @@ export function FaceCapture({ onCaptura, onCancelar }: { onCaptura: (frame: Blob
             Permita o acesso à câmera nas configurações do navegador e tente novamente. O reconhecimento usa a câmera frontal e não grava vídeo.
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-col items-stretch gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5">
           <Button variant="neutral" size="sm" onClick={() => setTentativa((n) => n + 1)}>
             Tentar novamente
           </Button>
           {/* TEMPORÁRIO (demonstração): remover antes de produção. */}
-          <button type="button" className="atf-link text-[13px] font-semibold" onClick={() => setSimulado(true)}>
-            Simular sem câmera
-          </button>
-          <button type="button" className="atf-link text-[13px]" onClick={onCancelar}>
-            Cancelar
-          </button>
+          <TextButton onClick={() => setSimulado(true)}>Simular sem câmera</TextButton>
+          <TextButton onClick={onCancelar}>Cancelar</TextButton>
         </div>
       </div>
     );
@@ -150,8 +147,8 @@ export function FaceCapture({ onCaptura, onCancelar }: { onCaptura: (frame: Blob
   const d = ovalPath(escala);
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-card bg-neutral-95">
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative aspect-[3/4] w-[min(100%,320px,42dvh)] overflow-hidden rounded-card bg-neutral-95">
         {simulado ? (
           <div className="absolute inset-0 flex items-center justify-center text-neutral-80" aria-hidden="true">
             <Icon name="faceIdIos" size={96} />
@@ -185,9 +182,9 @@ export function FaceCapture({ onCaptura, onCancelar }: { onCaptura: (frame: Blob
         {INSTRUCAO[fase]}
       </p>
       {fase !== "analisando" && (
-        <button type="button" className="atf-link text-[13px]" onClick={onCancelar}>
-          Cancelar
-        </button>
+        <div className="flex justify-center">
+          <TextButton onClick={onCancelar}>Cancelar</TextButton>
+        </div>
       )}
     </div>
   );

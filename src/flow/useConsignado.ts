@@ -186,7 +186,7 @@ export function useConsignado(api: ConsignadoApi) {
   const emailOk = emailValido(s.email);
   const phoneOk = phoneDigits.length === 11;
   const cpfDoTitular = cpfDigits.length === 11 && cpfValido(cpfDigits) && cpfDigits === titular;
-  const recebimentoOk = cpfDoTitular && s.pix === "ok" && emailOk && phoneOk;
+  const recebimentoOk = cpfDoTitular && s.pix === "ok";
   const limite = maxStep(s, recebimentoOk);
   const concluidas: Record<EtapaAssinatura, boolean> = {
     ccb: s.ccbRevisada,
@@ -283,12 +283,10 @@ export function useConsignado(api: ConsignadoApi) {
 
       enviarCodigo,
 
-      /** Aceite da CCB revisada; já dispara o código por e-mail. */
-      continuarCcb(propostaId: string) {
-        set({ ccbRevisada: true });
-        if (s.emailVerif.status !== "ok") enviarCodigo(propostaId, "email");
-        else if (s.smsVerif.status !== "ok") enviarCodigo(propostaId, "sms");
-      },
+      continuarCcb: () => set({ ccbRevisada: true }),
+
+      /** Volta a editar o e-mail/celular antes de reenviar o código. */
+      alterarContato: (canal: Canal) => dispatch({ type: "verificacao", canal, patch: { status: "pendente", codigo: "", erro: null } }),
 
       setCodigo: (canal: Canal, codigo: string) =>
         dispatch({ type: "verificacao", canal, patch: { codigo: onlyDigits(codigo).slice(0, 6), erro: null } }),
@@ -299,8 +297,6 @@ export function useConsignado(api: ConsignadoApi) {
         try {
           await api.confirmarCodigo({ propostaId, canal, codigo: v.codigo });
           dispatch({ type: "verificacao", canal, patch: { status: "ok" } });
-          // Confirmado o e-mail, o SMS já sai em seguida.
-          if (canal === "email" && s.smsVerif.status === "pendente") enviarCodigo(propostaId, "sms");
         } catch (e) {
           const onde = canal === "email" ? "o e-mail" : "o SMS";
           dispatch({
@@ -359,7 +355,7 @@ export function useConsignado(api: ConsignadoApi) {
       back: () => go((s.step - 1) as Step),
       carregarProposta,
     }),
-    [api, go, set, s.tutorial, s.step, s.emailVerif, s.smsVerif, s.documento, limite, enviarCodigo, carregarProposta],
+    [api, go, set, s.tutorial, s.step, s.emailVerif, s.documento, limite, enviarCodigo, carregarProposta],
   );
 
   return {
@@ -370,6 +366,8 @@ export function useConsignado(api: ConsignadoApi) {
       cpfDoTitular,
       cpfDigits,
       phoneDigits,
+      emailOk,
+      phoneOk,
       emailErro: s.email && !emailOk ? "Informe um e-mail válido." : undefined,
       phoneErro: phoneDigits.length && !phoneOk ? "Informe o celular com DDD." : undefined,
       recebimentoOk,

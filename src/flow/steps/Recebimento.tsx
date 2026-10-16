@@ -41,7 +41,7 @@ export function Recebimento({ flow: { state: s, actions: a, derived: d }, propos
         <div aria-live="polite" className="flex flex-col">
           {s.pix === "idle" && (
             <div className="flex">
-              <Button variant="outline" size="md" disabled={!d.cpfDoTitular} onClick={validar}>
+              <Button variant="outline" size="md" className="w-full sm:w-auto" disabled={!d.cpfDoTitular} onClick={validar}>
                 Validar chave Pix
               </Button>
             </div>
@@ -98,33 +98,6 @@ export function Recebimento({ flow: { state: s, actions: a, derived: d }, propos
             ))}
           </ol>
         )}
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <span className="text-[15px] font-semibold">Contato para acompanhar a contratação</span>
-        <FieldSlot>
-          <Input
-            label="E-mail"
-            type="email"
-            value={s.email}
-            onChange={a.setEmail}
-            errors={d.emailErro}
-            description="Você receberá um código para confirmar o e-mail e a CCB assinada."
-            autoComplete="email"
-          />
-        </FieldSlot>
-        <FieldSlot>
-          <Input
-            label="Celular"
-            type="tel"
-            value={s.phone}
-            onChange={a.setPhone}
-            mask="phone"
-            errors={d.phoneErro}
-            description="Você receberá um código para confirmar o celular e o protocolo por SMS."
-            autoComplete="tel-national"
-          />
-        </FieldSlot>
       </div>
 
       <Tile tone="amber" className="flex items-center gap-3">

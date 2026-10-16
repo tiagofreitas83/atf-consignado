@@ -11,7 +11,7 @@ import { DOCUMENTOS, EtapaDocumento } from "./assinatura/EtapaDocumento";
 
 const TITULOS: Record<EtapaAssinatura, string> = {
   ccb: "Revise e aceite a CCB",
-  email: "Confirme o seu e-mail",
+  email: "Confirme o seu e\u2011mail",
   sms: "Confirme o seu celular",
   documento: "Apresente o seu documento digital",
   biometria: "Faça o reconhecimento facial",

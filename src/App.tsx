@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import logoUrl from "./assets/logo.svg";
 import type { ConsignadoApi } from "./api/types";
 import { Spinner } from "./ds";
@@ -11,6 +12,7 @@ import { Recebimento } from "./flow/steps/Recebimento";
 import { useConsignado } from "./flow/useConsignado";
 
 const TOTAL = STEP_LABELS.length;
+const RODAPE = ["ATF SCD S.A.", "Sociedade de Crédito Direto", "Instituição 513", "Autorizada pelo Banco Central do Brasil"];
 
 export function App({ api }: { api: ConsignadoApi }) {
   const flow = useConsignado(api);
@@ -18,9 +20,9 @@ export function App({ api }: { api: ConsignadoApi }) {
   const p = s.proposta;
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-100">
+    <div className="flex min-h-dvh flex-col bg-neutral-100">
       <header className="sticky top-0 z-[5] bg-neutral-100">
-        <div className="mx-auto box-content flex max-w-[1120px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-[clamp(16px,5vw,40px)] py-[clamp(16px,4vw,24px)]">
+        <div className="mx-auto box-content flex max-w-[1120px] flex-wrap items-center justify-between gap-x-6 gap-y-3 cp-gutter py-[clamp(16px,4vw,24px)]">
           <img src={logoUrl} alt="ATF" className="block h-auto w-[104px]" />
           <div className="flex items-center gap-3 text-[13px]">
             <span className="font-semibold text-neutral-20">{STEP_LABELS[s.step - 1]}</span>
@@ -41,7 +43,7 @@ export function App({ api }: { api: ConsignadoApi }) {
         </div>
       </header>
 
-      <main className="mx-auto box-border w-full max-w-[1120px] flex-1 overflow-x-hidden px-[clamp(16px,5vw,40px)] pt-[clamp(24px,5vw,40px)] pb-16">
+      <main className="mx-auto box-border w-full max-w-[1120px] flex-1 overflow-x-hidden cp-gutter pt-[clamp(24px,5vw,40px)] pb-16">
         {s.step === 1 && <Intro flow={flow} />}
         {s.step > 1 && !p && (
           <div className="flex justify-center py-16">
@@ -55,22 +57,33 @@ export function App({ api }: { api: ConsignadoApi }) {
       </main>
 
       <footer className="border-t border-neutral-90">
-        <div className="mx-auto box-content flex max-w-[1120px] flex-wrap justify-between gap-3 px-[clamp(16px,5vw,40px)] py-6 text-xs leading-normal text-neutral-40">
-          <span>ATF SCD S.A. · Sociedade de Crédito Direto · Instituição 513 · Autorizada pelo Banco Central do Brasil</span>
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <a href="https://www.atf.com.br" target="_blank" rel="noopener noreferrer" className="atf-link !text-neutral-40 hover:!text-secondary-20">
+        <div className="cp-gutter cp-footer-bottom mx-auto box-content flex max-w-[1120px] flex-col gap-4 pt-6 text-xs leading-normal text-neutral-40 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          {/* Celular: um trecho por linha. Do tablet em diante: em linha, com "·", quebrando só entre trechos. */}
+          <p className="m-0">
+            {RODAPE.map((t, i) => (
+              <Fragment key={t}>
+                <span className="block sm:inline sm:whitespace-nowrap">
+                  {t}
+                  {i < RODAPE.length - 1 && <span className="hidden sm:inline"> ·</span>}
+                </span>
+                <span className="hidden sm:inline"> </span>
+              </Fragment>
+            ))}
+          </p>
+          <nav aria-label="Links institucionais" className="-my-1 flex flex-wrap gap-x-5">
+            <a href="https://www.atf.com.br" target="_blank" rel="noopener noreferrer" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20">
               www.atf.com.br
             </a>
-            <button type="button" className="atf-link !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("termos")}>
+            <button type="button" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("termos")}>
               Termos de consentimento
             </button>
-            <button type="button" className="atf-link !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("privacidade")}>
+            <button type="button" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("privacidade")}>
               Política de Privacidade
             </button>
-            <button type="button" className="atf-link !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("lgpd")}>
+            <button type="button" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("lgpd")}>
               LGPD
             </button>
-          </div>
+          </nav>
         </div>
       </footer>
 

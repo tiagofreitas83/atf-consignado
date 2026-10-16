@@ -16,18 +16,17 @@
 .atf-btn--sm{height:40px;padding:0 16px;gap:8px;font-size:12px;line-height:18px;font-weight:500;}
 .atf-btn--md{height:48px;padding:0 20px;gap:8px;font-size:14px;line-height:20px;font-weight:500;}
 .atf-btn--lg{height:56px;padding:0 24px;gap:8px;font-size:16px;line-height:22px;font-weight:500;}
-.atf-btn--full{width:100%;max-width:100%;white-space:normal;}
+.atf-btn--full{width:100%;max-width:100%;white-space:normal;height:auto;padding-top:8px;padding-bottom:8px;}
+.atf-btn--full.atf-btn--lg{min-height:56px;}
+.atf-btn--full.atf-btn--md{min-height:48px;}
+.atf-btn--full.atf-btn--sm{min-height:40px;}
 .atf-btn--brand{background:var(--color-primary);color:var(--color-neutral-25);}
-.atf-btn--brand:hover:not(:disabled){background:var(--color-secondary-70);}
 .atf-btn--brand:active:not(:disabled){background:var(--color-secondary-40);}
 .atf-btn--neutral{background:var(--color-neutral-0);color:var(--color-neutral-100);}
-.atf-btn--neutral:hover:not(:disabled){background:var(--color-neutral-10);}
 .atf-btn--neutral:active:not(:disabled){background:var(--color-neutral-20);}
 .atf-btn--outline{background:var(--color-neutral-100);color:var(--color-neutral-20);border:1px solid var(--color-neutral-20);}
-.atf-btn--outline:hover:not(:disabled){background:var(--color-neutral-95);}
 .atf-btn--outline:active:not(:disabled){background:var(--color-neutral-90);}
 .atf-btn--text{background:transparent;color:var(--color-neutral-50);padding-left:8px;padding-right:8px;}
-.atf-btn--text:hover:not(:disabled){color:var(--color-neutral-80);}
 .atf-btn--text:active:not(:disabled){background:rgba(255,255,255,.5);}
 .atf-btn--brand:disabled,.atf-btn--neutral:disabled{background:var(--color-neutral-80);color:var(--color-neutral-50);}
 .atf-btn--outline:disabled{background:var(--color-neutral-100);border-color:var(--color-neutral-80);color:var(--color-neutral-80);}
@@ -42,7 +41,6 @@
 .atf-iconbtn--md{width:40px;height:40px;}
 .atf-iconbtn--lg{width:48px;height:48px;}
 .atf-iconbtn--standard{background:transparent;color:var(--color-neutral-20);}
-.atf-iconbtn--standard:hover:not(:disabled){background:var(--color-neutral-95);}
 .atf-iconbtn--standard:active:not(:disabled){background:var(--color-neutral-90);}
 .atf-iconbtn--standard:disabled{background:transparent;color:var(--color-neutral-80);}
 
@@ -50,10 +48,9 @@
 .atf-field{position:relative;width:100%;min-width:0;display:flex;flex-direction:column;row-gap:8px;max-height:56px;font-family:var(--font-brand);}
 .atf-field--tall{max-height:74px;}
 .atf-field__box{width:100%;position:relative;display:flex;align-items:center;border:1px solid var(--color-neutral-50);border-radius:4px;min-height:56px;transition:all .2s;margin:0;padding:0;min-inline-size:0;}
-.atf-field__box:hover{border-color:var(--color-neutral-20);}
 .atf-field__box:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 2px var(--color-primary);}
-.atf-field--disabled .atf-field__box,.atf-field--disabled .atf-field__box:hover{border-color:var(--color-neutral-80);box-shadow:none;}
-.atf-field--error .atf-field__box,.atf-field--error .atf-field__box:hover{border-color:var(--color-error-40);}
+.atf-field--disabled .atf-field__box{border-color:var(--color-neutral-80);box-shadow:none;}
+.atf-field--error .atf-field__box{border-color:var(--color-error-40);}
 .atf-field--error .atf-field__box:focus-within{border-color:var(--color-error-40);box-shadow:0 0 0 2px var(--color-error-40);}
 .atf-field__label{position:absolute;left:12px;top:-12px;padding:0 4px;background:var(--color-neutral-100);max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--color-neutral-20);}
 .atf-field--error .atf-field__label{color:var(--color-error-40);}
@@ -78,7 +75,6 @@
 .atf-check{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;width:24px;height:24px;}
 .atf-check--disabled{cursor:not-allowed;}
 .atf-check__hit{position:absolute;width:40px;height:40px;border-radius:9999px;transition:background-color .15s;}
-.atf-check:hover:not(.atf-check--disabled) .atf-check__hit{background:var(--color-neutral-95);}
 .atf-check__box{position:relative;z-index:1;width:18px;height:18px;border-radius:var(--radius-xs,2px);
   border:2px solid var(--color-neutral-20);display:flex;align-items:center;justify-content:center;transition:background-color .15s,border-color .15s;color:var(--color-neutral-20);box-sizing:border-box;}
 .atf-check input:focus-visible ~ .atf-check__hit{background:var(--color-neutral-90);}
@@ -95,7 +91,6 @@
 .atf-radio{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;width:24px;height:24px;}
 .atf-radio--disabled{cursor:not-allowed;}
 .atf-radio__hit{position:absolute;width:40px;height:40px;border-radius:9999px;opacity:0;transition:opacity .15s,background-color .15s;}
-.atf-radio:hover:not(.atf-radio--disabled) .atf-radio__hit{opacity:1;background:#ecebe9b3;}
 .atf-radio input:focus-visible ~ .atf-radio__hit{opacity:1;background:var(--color-neutral-90);}
 .atf-radio__ring{position:relative;z-index:1;width:20px;height:20px;border-radius:9999px;border:2px solid var(--color-neutral-50);box-sizing:border-box;
   display:flex;align-items:center;justify-content:center;transition:background-color .15s,border-color .15s;}
@@ -103,3 +98,18 @@
 .atf-radio__dot{width:10px;height:10px;border-radius:9999px;background:var(--color-neutral-20);opacity:0;transition:opacity .15s;}
 .atf-radio--on .atf-radio__dot{opacity:1;}
 .atf-radio--disabled .atf-radio__ring{border-color:var(--color-neutral-80);}
+
+
+/* Hover só com mouse/trackpad: no toque, o estado de hover fica preso depois do tap. */
+@media (hover: hover) {
+  .atf-btn--brand:hover:not(:disabled){background:var(--color-secondary-70);}
+  .atf-btn--neutral:hover:not(:disabled){background:var(--color-neutral-10);}
+  .atf-btn--outline:hover:not(:disabled){background:var(--color-neutral-95);}
+  .atf-btn--text:hover:not(:disabled){color:var(--color-neutral-80);}
+  .atf-iconbtn--standard:hover:not(:disabled){background:var(--color-neutral-95);}
+  .atf-field__box:hover{border-color:var(--color-neutral-20);}
+  .atf-field--disabled .atf-field__box,.atf-field--disabled .atf-field__box:hover{border-color:var(--color-neutral-80);box-shadow:none;}
+  .atf-field--error .atf-field__box,.atf-field--error .atf-field__box:hover{border-color:var(--color-error-40);}
+  .atf-check:hover:not(.atf-check--disabled) .atf-check__hit{background:var(--color-neutral-95);}
+  .atf-radio:hover:not(.atf-radio--disabled) .atf-radio__hit{opacity:1;background:#ecebe9b3;}
+}

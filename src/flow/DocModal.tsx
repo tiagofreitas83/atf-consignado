@@ -26,29 +26,29 @@ export function DocModal({ doc, onClose }: { doc: Doc; onClose: () => void }) {
   }, []);
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-20 flex items-center justify-center bg-[rgba(0,0,0,.4)] p-6">
+    <div onClick={onClose} className="fixed inset-0 z-20 flex items-end justify-center bg-[rgba(0,0,0,.4)] sm:items-center sm:p-6">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[80vh] w-full max-w-[560px] flex-col overflow-hidden rounded-card bg-neutral-100 shadow-3"
+        className="cp-sheet flex max-h-[88dvh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-card bg-neutral-100 shadow-3 sm:max-h-[80vh] sm:rounded-card"
       >
-        <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4">
-          <h2 id={titleId} className="m-0 text-xl font-semibold">
+        <div className="flex items-start justify-between gap-3 pt-6 pr-3 pb-4 pl-[clamp(20px,5vw,24px)] sm:items-center">
+          <h2 id={titleId} className="m-0 pt-2 text-xl leading-tight font-semibold text-balance sm:pt-0">
             {title}
           </h2>
           <IconButton icon="close" onClick={onClose} aria-label="Fechar" />
         </div>
-        <div className="flex flex-col gap-3 overflow-y-auto px-6 pb-6">
+        <div className="flex flex-col gap-3 overflow-y-auto overscroll-contain px-[clamp(20px,5vw,24px)] pb-6">
           {paras.map((p) => (
             <p key={p} className="m-0 text-sm leading-[1.6] text-neutral-20 text-pretty">
               {p}
             </p>
           ))}
         </div>
-        <div className="flex justify-end border-t border-neutral-90 px-6 py-4">
-          <Button ref={okRef} variant="brand" size="md" onClick={onClose}>
+        <div className="cp-sheet-footer flex justify-end border-t border-neutral-90 px-[clamp(20px,5vw,24px)] pt-4">
+          <Button ref={okRef} variant="brand" size="md" className="w-full sm:w-auto" onClick={onClose}>
             Entendi
           </Button>
         </div>

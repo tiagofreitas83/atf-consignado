@@ -58,6 +58,7 @@
     font-family: var(--font-sans);
     line-height: normal; /* o protótipo não fixa line-height; o preflight do Tailwind usaria 1.5 */
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
   /* Ligaduras desligadas em tudo, como no app (form controls não herdam). */
   *, *::before, *::after, input, textarea, select, button {
@@ -79,8 +80,23 @@
     padding: 0;
     font: inherit;
   }
-  .atf-link:hover { color: var(--color-secondary-20); }
+  @media (hover: hover) {
+    .atf-link:hover { color: var(--color-secondary-20); }
+  }
+  .atf-link:focus-visible { outline: 2px solid var(--color-neutral-20); outline-offset: 2px; border-radius: 2px; }
 }
+
+/* Calhas laterais do layout, respeitando notch/cantos arredondados em paisagem. */
+.cp-gutter {
+  padding-left: max(clamp(16px, 5vw, 40px), env(safe-area-inset-left));
+  padding-right: max(clamp(16px, 5vw, 40px), env(safe-area-inset-right));
+}
+.cp-footer-bottom { padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); }
+
+/* Folha do modal: no celular sobe de baixo e respeita a barra de gestos. */
+.cp-sheet-footer { padding-bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px)); }
+@keyframes cpSheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cp-sheet { animation: cpSheetUp 0.22s ease-out both; }
 
 @keyframes cpPop { 0% { transform: scale(0); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
 @keyframes cpDraw { to { stroke-dashoffset: 0; } }

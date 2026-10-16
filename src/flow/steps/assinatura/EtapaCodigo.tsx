@@ -1,32 +1,48 @@
 import { Button, Input, Spinner } from "../../../ds";
 import type { Canal } from "../../../api/types";
 import { celularMascarado, emailMascarado } from "../../../lib/format";
-import { FieldSlot, Tile } from "../../ui";
+import { FieldSlot, LinkRow, TextButton, Tile } from "../../ui";
 import type { Flow } from "../../useConsignado";
 
 const CODIGO_EXEMPLO = "123456";
 
-/** Confirmação de e-mail ou celular por código de 6 dígitos. */
+/**
+ * Confirmação de e-mail ou celular: a pessoa confere (ou corrige) o contato
+ * vindo da proposta, recebe um código de 6 dígitos e o digita.
+ */
 export function EtapaCodigo({ flow: { state: s, actions: a, derived: d }, propostaId, canal }: { flow: Flow; propostaId: string; canal: Canal }) {
-  const v = canal === "email" ? s.emailVerif : s.smsVerif;
-  const destino = canal === "email" ? emailMascarado(s.email) : celularMascarado(d.phoneDigits);
-  const meio = canal === "email" ? "e-mail" : "SMS";
+  const ehEmail = canal === "email";
+  const v = ehEmail ? s.emailVerif : s.smsVerif;
+  const destino = ehEmail ? emailMascarado(s.email) : celularMascarado(d.phoneDigits);
+  const meio = ehEmail ? "e-mail" : "SMS";
   const ocupado = v.status === "confirmando";
 
   if (v.status === "pendente") {
+    const contatoOk = ehEmail ? d.emailOk : d.phoneOk;
     return (
-      <div className="flex flex-col items-start gap-3">
-        <p className="m-0 text-sm leading-normal text-neutral-40">
-          Vamos enviar um código de 6 dígitos por {meio} para <strong className="font-semibold text-neutral-20">{destino}</strong>.
+      <div className="flex flex-col gap-3">
+        <p className="m-0 text-sm leading-normal text-neutral-40 text-pretty">
+          {ehEmail
+            ? "Confira o seu e-mail. Vamos enviar um código de 6 dígitos para ele, e é nele que você recebe a CCB assinada."
+            : "Confira o seu celular. Vamos enviar um código de 6 dígitos por SMS, e é nele que você recebe o protocolo."}
         </p>
+        <FieldSlot>
+          {ehEmail ? (
+            <Input label="E-mail" type="email" value={s.email} onChange={a.setEmail} errors={d.emailErro} autoComplete="email" />
+          ) : (
+            <Input label="Celular" type="tel" value={s.phone} onChange={a.setPhone} mask="phone" errors={d.phoneErro} autoComplete="tel-national" />
+          )}
+        </FieldSlot>
         {v.erro && (
           <p className="m-0 text-sm text-error-10" role="alert">
             {v.erro}
           </p>
         )}
-        <Button variant="brand" size="md" onClick={() => a.enviarCodigo(propostaId, canal)}>
-          Enviar código
-        </Button>
+        <div className="flex">
+          <Button variant="brand" size="md" className="w-full sm:w-auto" disabled={!contatoOk} onClick={() => a.enviarCodigo(propostaId, canal)}>
+            Enviar código
+          </Button>
+        </div>
       </div>
     );
   }
@@ -42,12 +58,12 @@ export function EtapaCodigo({ flow: { state: s, actions: a, derived: d }, propos
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="m-0 text-sm leading-normal text-neutral-40">
-        Enviamos um código de 6 dígitos por {meio} para <strong className="font-semibold text-neutral-20">{destino}</strong>.
+      <p className="m-0 text-sm leading-normal text-neutral-40 text-pretty">
+        Enviamos um código de 6 dígitos por {meio} para <strong className="font-semibold text-neutral-20 [overflow-wrap:anywhere]">{destino}</strong>.
       </p>
       <FieldSlot>
         <Input
-          label={canal === "email" ? "Código do e-mail" : "Código do SMS"}
+          label={ehEmail ? "Código do e-mail" : "Código do SMS"}
           value={v.codigo}
           onChange={(c) => a.setCodigo(canal, c)}
           mask="number"
@@ -58,23 +74,31 @@ export function EtapaCodigo({ flow: { state: s, actions: a, derived: d }, propos
         />
       </FieldSlot>
       {/* TEMPORÁRIO (demonstração): remover antes de produção. */}
-      <p className="m-0 -mt-3 text-[13px] text-neutral-40">
+      <p className="m-0 -mt-3 text-[13px] leading-normal text-neutral-40">
         Exemplo para testar: qualquer código de 6 dígitos, como {CODIGO_EXEMPLO}.{" "}
         <button type="button" className="atf-link font-semibold" onClick={() => a.setCodigo(canal, CODIGO_EXEMPLO)} disabled={ocupado}>
           Preencher
         </button>
       </p>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Button variant="brand" size="md" disabled={v.codigo.length !== 6 || ocupado} onClick={() => a.confirmarCodigo(propostaId, canal)}>
+      <div className="flex">
+        <Button
+          variant="brand"
+          size="md"
+          className="w-full sm:w-auto"
+          disabled={v.codigo.length !== 6 || ocupado}
+          onClick={() => a.confirmarCodigo(propostaId, canal)}
+        >
           {ocupado ? "Confirmando…" : "Confirmar código"}
         </Button>
-        <button type="button" className="atf-link text-sm font-semibold" onClick={() => a.enviarCodigo(propostaId, canal)} disabled={ocupado}>
-          Reenviar código
-        </button>
-        <button type="button" className="atf-link text-sm" onClick={a.back} disabled={ocupado}>
-          {canal === "email" ? "Alterar e-mail" : "Alterar celular"}
-        </button>
       </div>
+      <LinkRow>
+        <TextButton onClick={() => a.enviarCodigo(propostaId, canal)} disabled={ocupado}>
+          Reenviar código
+        </TextButton>
+        <TextButton onClick={() => a.alterarContato(canal)} disabled={ocupado}>
+          {ehEmail ? "Alterar e\u2011mail" : "Alterar celular"}
+        </TextButton>
+      </LinkRow>
     </div>
   );
 }

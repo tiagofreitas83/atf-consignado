@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Icon, IconButton, type IconName } from "../../ds";
+import { Button, Icon, type IconName } from "../../ds";
 import type { Proposta } from "../../api/types";
 import { brl, horasUteisLabel, primeiroNome } from "../../lib/format";
 import type { Flow } from "../useConsignado";
@@ -39,7 +39,7 @@ export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; pro
   const banco = s.pixResultado ? `${s.pixResultado.instituicao.nome} (${s.pixResultado.instituicao.codigo})` : "";
   const envios: { icon: IconName; title: string; text: string }[] = [
     { icon: "chat", title: "SMS enviado", text: `Para ${s.phone}, com o protocolo e o link para acompanhar a contratação.` },
-    { icon: "mail", title: "CCB assinada no seu e-mail", text: `Enviamos a cédula em PDF para ${s.email}.` },
+    { icon: "mail", title: "CCB assinada no seu e\u2011mail", text: `Enviamos a cédula em PDF para ${s.email}.` },
     { icon: "pix", title: `Pix em até ${horas}`, text: "Avisamos por SMS assim que o valor for creditado na sua conta." },
   ];
 
@@ -58,12 +58,18 @@ export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; pro
         </p>
       </div>
 
-      <div className="box-border flex w-full flex-col gap-1 rounded-card bg-secondary-90 p-[clamp(16px,4vw,24px)] [animation:cpFade_.5s_.85s_ease_both]">
+      <div className="box-border flex w-full flex-col items-center gap-1 rounded-card bg-secondary-90 p-[clamp(16px,4vw,24px)] pb-3 [animation:cpFade_.5s_.85s_ease_both]">
         <span className="text-[13px] text-neutral-40">Número do protocolo</span>
-        <div className="flex items-center justify-center gap-2">
-          <span className="min-w-0 text-[clamp(22px,6.4vw,28px)] font-semibold tracking-[.02em] [overflow-wrap:anywhere]">{protocolo}</span>
-          <IconButton icon={copiado ? "check" : "copy"} onClick={copiar} aria-label={copiado ? "Protocolo copiado" : "Copiar protocolo"} />
-        </div>
+        <span className="text-[clamp(19px,6vw,28px)] font-semibold tracking-[.02em] whitespace-nowrap">{protocolo}</span>
+        <button
+          type="button"
+          onClick={copiar}
+          aria-label={copiado ? "Protocolo copiado" : "Copiar protocolo"}
+          className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors hover:bg-[#ffefd5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-20 active:bg-[#ffefd5]"
+        >
+          <Icon name={copiado ? "check" : "copy"} size={20} />
+          {copiado ? "Copiado" : "Copiar"}
+        </button>
         <span aria-live="polite" className="sr-only">
           {copiado ? "Protocolo copiado" : ""}
         </span>
