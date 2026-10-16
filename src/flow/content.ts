@@ -26,11 +26,21 @@ export const DOCS = {
   },
 } as const;
 
-export const TUTORIAL_PIX = [
-  { title: "Abra o app do seu banco", text: "Use a conta que está no seu nome e CPF." },
+export type Passo = { title: string; text: string };
+
+export const TUTORIAL_CRIAR_CHAVE: Passo[] = [
+  { title: "Abra o app do seu banco", text: "Use uma conta que esteja no seu nome e CPF." },
   { title: "Entre em Pix › Minhas chaves", text: "O nome pode variar: Área Pix, Gerenciar chaves ou Cadastrar chave." },
-  { title: "Cadastre a chave CPF", text: "Escolha CPF como tipo de chave e confirme com a senha do app." },
-  { title: "Volte e valide aqui", text: "A chave fica ativa na hora. Toque em validar para seguir." },
+  { title: "Cadastre uma chave", text: "Recomendamos o CPF. Também valem celular, e-mail ou chave aleatória." },
+  { title: "Volte e verifique de novo", text: "A chave fica ativa na hora. Toque em “Já criei, verificar de novo”." },
+];
+
+/** Portabilidade da chave CPF para outro banco. */
+export const tutorialTrocarBanco = (bancoAtual: string): Passo[] => [
+  { title: "Abra o app do banco onde quer receber", text: "A conta precisa estar no seu nome e CPF." },
+  { title: "Cadastre o CPF como chave Pix", text: "O app avisa que a chave está em outro banco e oferece trazê-la (portabilidade)." },
+  { title: "Confirme no banco atual", text: `O ${bancoAtual} pede a sua confirmação para liberar a chave. Sem ela, a portabilidade não acontece.` },
+  { title: "Volte e verifique de novo", text: "Com a portabilidade concluída, toque em “Já movi, verificar de novo”." },
 ];
 
 export const STEP_LABELS = ["Boas-vindas", "Proposta", "Recebimento", "Assinatura", "Concluído"] as const;

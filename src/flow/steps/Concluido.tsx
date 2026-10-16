@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Icon, type IconName } from "../../ds";
 import type { Proposta } from "../../api/types";
-import { brl, horasUteisLabel, primeiroNome } from "../../lib/format";
+import { banco, brl, horasUteisLabel, primeiroNome } from "../../lib/format";
 import type { Flow } from "../useConsignado";
 
 function CheckAnimado() {
@@ -26,7 +26,7 @@ function CheckAnimado() {
   );
 }
 
-export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; proposta: Proposta }) {
+export function Concluido({ flow: { state: s, derived: d }, proposta: p }: { flow: Flow; proposta: Proposta }) {
   const protocolo = s.assinatura?.protocolo ?? "";
   const [copiado, setCopiado] = useState(false);
   useEffect(() => {
@@ -36,7 +36,7 @@ export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; pro
   }, [copiado]);
   const copiar = () => navigator.clipboard?.writeText(protocolo).then(() => setCopiado(true), () => {});
   const horas = horasUteisLabel(p.horasUteisPagamento);
-  const banco = s.pixResultado ? `${s.pixResultado.instituicao.nome} (${s.pixResultado.instituicao.codigo})` : "";
+  const destinoBanco = d.pixDestino ? banco(d.pixDestino.instituicao) : "";
   const envios: { icon: IconName; title: string; text: string }[] = [
     { icon: "chat", title: "SMS enviado", text: `Para ${s.phone}, com o protocolo e o link para acompanhar a contratação.` },
     { icon: "mail", title: "CCB assinada no seu e\u2011mail", text: `Enviamos a cédula em PDF para ${s.email}.` },
@@ -54,7 +54,7 @@ export function Concluido({ flow: { state: s }, proposta: p }: { flow: Flow; pro
           Pronto, {primeiroNome(p.trabalhador.nome)}! Contratação concluída.
         </h1>
         <p className="m-0 text-[17px] leading-normal text-neutral-40 text-pretty">
-          {brl(p.valor)} serão enviados por Pix para {banco} em até {horas}.
+          {brl(p.valor)} serão enviados por Pix para {destinoBanco} em até {horas}.
         </p>
       </div>
 

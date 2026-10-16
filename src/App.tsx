@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import logoUrl from "./assets/logo.svg";
 import type { ConsignadoApi } from "./api/types";
-import { Spinner } from "./ds";
 import { STEP_LABELS } from "./flow/content";
 import { DocModal } from "./flow/DocModal";
 import { Assinatura } from "./flow/steps/Assinatura";
@@ -14,8 +13,8 @@ import { useConsignado } from "./flow/useConsignado";
 const TOTAL = STEP_LABELS.length;
 const RODAPE = ["ATF SCD S.A.", "Sociedade de Crédito Direto", "Instituição 513", "Autorizada pelo Banco Central do Brasil"];
 
-export function App({ api }: { api: ConsignadoApi }) {
-  const flow = useConsignado(api);
+export function App({ api, token }: { api: ConsignadoApi; token: string }) {
+  const flow = useConsignado(api, token);
   const { state: s, actions: a } = flow;
   const p = s.proposta;
 
@@ -45,12 +44,7 @@ export function App({ api }: { api: ConsignadoApi }) {
 
       <main className="mx-auto box-border w-full max-w-[1120px] flex-1 overflow-x-hidden cp-gutter pt-[clamp(24px,5vw,40px)] pb-16">
         {s.step === 1 && <Intro flow={flow} />}
-        {s.step > 1 && !p && (
-          <div className="flex justify-center py-16">
-            <Spinner />
-          </div>
-        )}
-        {p && s.step === 2 && <Proposta key="2" flow={flow} proposta={p} />}
+        {s.step === 2 && <Proposta key="2" flow={flow} />}
         {p && s.step === 3 && <Recebimento key="3" flow={flow} proposta={p} />}
         {p && s.step === 4 && <Assinatura key="4" flow={flow} proposta={p} />}
         {p && s.step === 5 && <Concluido key="5" flow={flow} proposta={p} />}

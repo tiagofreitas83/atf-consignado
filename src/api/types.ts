@@ -1,5 +1,11 @@
 // Contrato com o back-end do consignado. Todos os valores da proposta vêm da
 // API — o front só formata, nunca calcula.
+//
+// O link chega como www.atf.com.br/consignado/<token>. O token é opaco para o
+// front (CPF cifrado no servidor): ele só é repassado à API. Nenhum dado
+// pessoal da proposta é entregue antes de o CPF digitado conferir com o token.
+
+import type { TipoChavePix } from "../lib/pix";
 
 export type Proposta = {
   id: string;
@@ -22,16 +28,37 @@ export type Proposta = {
   ccb: { numero: string };
 };
 
+export type VerificacaoCpf =
+  | { status: "ok"; proposta: Proposta }
+  | { status: "nao-confere"; tentativasRestantes: number }
+  | { status: "bloqueado" };
+
 export type InstituicaoPix = { nome: string; codigo: string };
 
-export type ValidacaoPix =
-  | { status: "ok"; instituicao: InstituicaoPix; titularMascarado: string }
-  | { status: "notfound" };
+/** Conta de destino do crédito, sempre no CPF do trabalhador. */
+export type DestinoPix = {
+  tipo: TipoChavePix;
+  chaveMascarada: string;
+  instituicao: InstituicaoPix;
+  /** Nome do titular mascarado, ex.: "Mariana S. L." */
+  titularMascarado: string;
+};
+
+/** Resultado da busca automática por chave Pix no CPF do trabalhador. */
+export type ConsultaPix =
+  | { status: "cpf"; destino: DestinoPix }
+  | { status: "outras-chaves" }
+  | { status: "sem-chaves" };
+
+export type ValidacaoChavePix =
+  | { status: "ok"; destino: DestinoPix }
+  | { status: "outro-titular" }
+  | { status: "nao-encontrada" };
 
 export type Assinatura = { protocolo: string; ccbUrl: string };
 
 export type Consentimento = {
-  propostaId: string;
+  token: string;
   versaoTermos: string;
   versaoPrivacidade: string;
 };
@@ -56,12 +83,17 @@ export class CodigoInvalidoError extends Error {
 }
 
 export interface ConsignadoApi {
-  /** GET /proposta */
-  getProposta(): Promise<Proposta>;
   /** POST /consentimentos — o back-end grava timestamp e IP. */
   registrarConsentimento(c: Consentimento): Promise<void>;
-  /** POST /pix/validar — consulta DICT da chave CPF; 404 → `notfound`. */
-  validarPix(req: { propostaId: string; cpf: string }): Promise<ValidacaoPix>;
+  /**
+   * POST /proposta/verificar — confere o CPF com o token do link e, só então,
+   * devolve a proposta. Erros consomem tentativas; esgotadas, o link é bloqueado.
+   */
+  verificarCpf(req: { token: string; cpf: string }): Promise<VerificacaoCpf>;
+  /** POST /pix/consultar — busca no DICT as chaves Pix do CPF do trabalhador. */
+  consultarPix(req: { propostaId: string }): Promise<ConsultaPix>;
+  /** POST /pix/validar — valida uma chave informada; só aceita se for do CPF do trabalhador. */
+  validarChavePix(req: { propostaId: string; tipo: TipoChavePix; chave: string }): Promise<ValidacaoChavePix>;
   /** POST /assinatura/codigo — envia o código de 6 dígitos por e-mail ou SMS. */
   enviarCodigo(req: { propostaId: string; canal: Canal; destino: string }): Promise<void>;
   /** POST /assinatura/codigo/confirmar — lança `CodigoInvalidoError` se não confere. */

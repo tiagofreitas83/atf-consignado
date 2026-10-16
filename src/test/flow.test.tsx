@@ -2,20 +2,56 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
-import { createMockApi } from "../api/mock";
+import { createMockApi, type CenarioPix } from "../api/mock";
 import { DemoSpeed } from "../flow/timing";
+
+const TOKEN = "k7Qx2mLw9ZvR4nH6sT0b";
+type User = ReturnType<typeof userEvent.setup>;
 
 const seguir = () => screen.getByRole("button", { name: /^Seguir$/ });
 
-function renderApp(pix: "cadastrado" | "sem-chave" = "cadastrado") {
+function renderApp(pix: CenarioPix = "cpf") {
   return render(
     <DemoSpeed.Provider value={0}>
-      <App api={createMockApi({ latency: 0, pixResultado: pix })} />
+      <App api={createMockApi({ latency: 0, pix })} token={TOKEN} />
     </DemoSpeed.Provider>,
   );
 }
 
-type User = ReturnType<typeof userEvent.setup>;
+async function ateConfirmarCpf(pix: CenarioPix = "cpf") {
+  const user = userEvent.setup();
+  renderApp(pix);
+  expect(seguir()).toBeDisabled();
+  await user.click(screen.getByRole("checkbox"));
+  await waitFor(() => expect(seguir()).toBeEnabled());
+  await user.click(seguir());
+  await screen.findByRole("heading", { name: "Confirme o seu CPF" });
+  return user;
+}
+
+async function verificarCpf(user: User, cpf: string) {
+  const campo = screen.getByLabelText("CPF");
+  await user.clear(campo);
+  await user.type(campo, cpf);
+  await user.click(screen.getByRole("button", { name: "Ver minha proposta" }));
+}
+
+async function ateRecebimento(pix: CenarioPix = "cpf") {
+  const user = await ateConfirmarCpf(pix);
+  await verificarCpf(user, "12345678909");
+  await screen.findByRole("heading", { name: "R$ 8.000,00" });
+  await user.click(screen.getByRole("button", { name: /Confirmar proposta/ }));
+  await screen.findByRole("heading", { name: "Onde você quer receber?" });
+  return user;
+}
+
+async function ateAssinatura() {
+  const user = await ateRecebimento();
+  await screen.findByText("Encontramos a chave Pix do seu CPF");
+  await user.click(screen.getByRole("button", { name: /Seguir para assinatura/ }));
+  await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
+  return user;
+}
 
 async function aceitarCcb(user: User) {
   await user.click(screen.getByRole("checkbox"));
@@ -51,79 +87,111 @@ async function assinarTudo(user: User) {
   await user.click(assinar);
 }
 
-async function ateAssinatura() {
-  const user = await ateRecebimento();
-  await user.type(screen.getByLabelText("Chave Pix (CPF)"), "12345678909");
-  await user.click(screen.getByRole("button", { name: "Validar chave Pix" }));
-  await screen.findByText("Chave validada");
-  await user.click(screen.getByRole("button", { name: /Seguir para assinatura/ }));
-  await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
-  return user;
-}
-
-async function ateRecebimento(pix: "cadastrado" | "sem-chave" = "cadastrado") {
-  const user = userEvent.setup();
-  renderApp(pix);
-  expect(seguir()).toBeDisabled();
-  await user.click(screen.getByRole("checkbox"));
-  await waitFor(() => expect(seguir()).toBeEnabled());
-  await user.click(seguir());
-  await screen.findByRole("heading", { name: "R$ 8.000,00" });
-  expect(screen.getByText("1,89% a.m. · 25,19% a.a.")).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: /Confirmar proposta/ }));
-  await screen.findByRole("heading", { name: "Onde você quer receber?" });
-  return user;
-}
-
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
   window.scrollTo = vi.fn() as never;
 });
 
-describe("jornada", () => {
-  it("vai do consentimento ao protocolo", async () => {
-    const user = await ateRecebimento();
-    expect(window.location.search).toBe("?step=3");
-    const cpf = screen.getByLabelText("Chave Pix (CPF)");
-    const proximo = screen.getByRole("button", { name: /Seguir para assinatura/ });
+describe("confirmação do CPF", () => {
+  it("não mostra nenhum dado da proposta antes de o CPF conferir", async () => {
+    const user = await ateConfirmarCpf();
+    expect(screen.queryByText(/Mariana/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Metalúrgica/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
 
-    await user.type(cpf, "11111111111");
+    await user.type(screen.getByLabelText("CPF"), "11111111111");
     expect(screen.getByText("CPF inválido.")).toBeInTheDocument();
-    await user.clear(cpf);
-    await user.type(cpf, "52998224725");
-    expect(screen.getByText("A chave precisa ser o CPF do titular do crédito.")).toBeInTheDocument();
-    await user.clear(cpf);
-    await user.type(cpf, "12345678909");
+    expect(screen.getByRole("button", { name: "Ver minha proposta" })).toBeDisabled();
+
+    await verificarCpf(user, "52998224725");
+    await screen.findByText("Este CPF não confere com a proposta. Você ainda tem 2 tentativas.");
+    expect(screen.queryByText(/Mariana/)).not.toBeInTheDocument();
+
+    await verificarCpf(user, "12345678909");
+    await screen.findByText("Olá, Mariana. Esta é a sua proposta.");
+    expect(screen.getByText("Metalúrgica Aurora Ltda")).toBeInTheDocument();
+  });
+
+  it("bloqueia o link depois de 3 CPFs que não conferem", async () => {
+    const user = await ateConfirmarCpf();
+    await verificarCpf(user, "52998224725");
+    await screen.findByText(/2 tentativas/);
+    await verificarCpf(user, "52998224725");
+    await screen.findByText(/1 tentativa\./);
+    await verificarCpf(user, "52998224725");
+    await screen.findByText("Bloqueamos este link por segurança");
+    expect(screen.queryByLabelText("CPF")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ver minha proposta" })).not.toBeInTheDocument();
+  });
+});
+
+describe("recebimento", () => {
+  it("CPF travado e banco da chave CPF encontrado automaticamente", async () => {
+    await ateRecebimento();
+    const cpf = screen.getByLabelText("CPF do titular");
     expect(cpf).toHaveValue("123.456.789-09");
+    expect(cpf).toHaveAttribute("readonly");
+    await screen.findByText("Encontramos a chave Pix do seu CPF");
+    expect(screen.getByText("Nu Pagamentos S.A. (260)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Seguir para assinatura/ })).toBeEnabled();
+  });
+
+  it("trocar de banco: passo a passo da portabilidade e nova verificação", async () => {
+    const user = await ateRecebimento();
+    await user.click(await screen.findByRole("button", { name: "Quero receber em outro banco" }));
+    expect(screen.getByText("Leve a chave CPF para o outro banco")).toBeInTheDocument();
+    expect(screen.getByText(/O Nu Pagamentos S\.A\. pede a sua confirmação/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Já movi, verificar de novo" }));
+    await screen.findByText("Banco Inter S.A. (077)");
+  });
+
+  it("CPF sem chave, mas com outras: reconhece o tipo e só aceita chave do titular", async () => {
+    const user = await ateRecebimento("outras-chaves");
+    await screen.findByText("O seu CPF ainda não é uma chave Pix");
+    const proximo = screen.getByRole("button", { name: /Seguir para assinatura/ });
     expect(proximo).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: "Validar chave Pix" }));
-    await screen.findByText("Chave validada");
-    expect(screen.getByText(/Nu Pagamentos S\.A\. \(260\)/)).toBeInTheDocument();
-    expect(proximo).toBeEnabled();
+    const campo = screen.getByLabelText("Chave Pix");
+    await user.type(campo, "fulano@outro.com");
+    expect(screen.getByText("Identificamos: E-mail · fulano@outro.com")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Verificar chave" }));
+    await screen.findByText(/Essa chave não está no CPF de Mariana/);
+    expect(proximo).toBeDisabled();
 
-    await user.click(proximo);
-    await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
+    await user.clear(campo);
+    await user.type(campo, "(11) 98765-4321");
+    expect(screen.getByText("Identificamos: Celular · (11) 98765-4321")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Verificar chave" }));
+    await screen.findByText("Chave verificada");
+    expect(screen.getByText("Itaú Unibanco S.A. (341)")).toBeInTheDocument();
+    expect(proximo).toBeEnabled();
+  });
+
+  it("nenhuma chave: aviso, tutorial de criação e nova verificação", async () => {
+    const user = await ateRecebimento("sem-chaves");
+    await screen.findByText("Não encontramos nenhuma chave Pix no seu CPF");
+    expect(screen.getByText("Como criar uma chave Pix")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Seguir para assinatura/ })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Já criei, verificar de novo" }));
+    await screen.findByText("Encontramos a chave Pix do seu CPF");
+  });
+});
+
+describe("jornada", () => {
+  it("vai do consentimento ao protocolo", async () => {
+    const user = await ateAssinatura();
+    expect(window.location.search).toBe("?step=4");
     await assinarTudo(user);
     await screen.findByRole("heading", { name: /Pronto, Mariana!/ });
     expect(screen.getByText("CP 2026 1016 48213")).toBeInTheDocument();
+    expect(screen.getByText(/serão enviados por Pix para Nu Pagamentos S\.A\. \(260\)/)).toBeInTheDocument();
     expect(window.location.search).toBe("?step=5");
-    expect(screen.queryByRole("button", { name: /Acompanhar protocolo/ })).not.toBeInTheDocument();
+
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     await user.click(screen.getByRole("button", { name: "Copiar protocolo" }));
     expect(writeText).toHaveBeenCalledWith("CP 2026 1016 48213");
     await screen.findByRole("button", { name: "Protocolo copiado" });
-  });
-
-  it("CPF sem chave Pix abre o tutorial e permite validar de novo", async () => {
-    const user = await ateRecebimento("sem-chave");
-    await user.type(screen.getByLabelText("Chave Pix (CPF)"), "12345678909");
-    await user.click(screen.getByRole("button", { name: "Validar chave Pix" }));
-    await screen.findByText("Seu CPF ainda não é uma chave Pix");
-    expect(screen.getByText("Cadastre a chave CPF")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /validar novamente/ }));
-    await screen.findByText("Chave validada");
   });
 
   it("código do e-mail inválido mostra erro e não avança", async () => {
@@ -135,34 +203,6 @@ describe("jornada", () => {
     await screen.findByText(/Código inválido. Confira o e-mail/);
     expect(screen.queryByLabelText("Código do SMS")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Assinar CCB/ })).toBeDisabled();
-  });
-
-  it("digitaliza o RG (frente e verso) pela câmera", async () => {
-    const user = await ateAssinatura();
-    await aceitarCcb(user);
-    await confirmarCodigo(user, "Código do e-mail");
-    await confirmarCodigo(user, "Código do SMS");
-    await user.click(await screen.findByText("RG"));
-    await user.click(screen.getByText("Fotografar o documento"));
-    await user.click(screen.getByRole("button", { name: /Abrir câmera/ }));
-    // jsdom não tem câmera: segue pelo modo simulado.
-    await user.click(await screen.findByRole("button", { name: "Simular sem câmera" }));
-    expect(screen.getByText("Encaixe a frente do RG na moldura")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Tirar foto da frente/ }));
-    await user.click(screen.getByRole("button", { name: /Usar foto e fotografar o verso/ }));
-    expect(screen.getByText("Encaixe o verso do RG na moldura")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Tirar foto do verso/ }));
-    await user.click(screen.getByRole("button", { name: /Tirar outra foto/ }));
-    await user.click(screen.getByRole("button", { name: /Tirar foto do verso/ }));
-    await user.click(screen.getByRole("button", { name: /Usar foto e enviar/ }));
-    await screen.findByText("RG validado por foto");
-    expect(screen.getByRole("button", { name: /Iniciar reconhecimento/ })).toBeInTheDocument();
-  });
-
-  it("passo 3 não pede mais e-mail nem celular", async () => {
-    await ateRecebimento();
-    expect(screen.queryByLabelText("E-mail")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Celular")).not.toBeInTheDocument();
   });
 
   it("e-mail inválido não deixa enviar o código; alterar o celular reabre a edição", async () => {
@@ -187,15 +227,37 @@ describe("jornada", () => {
     expect(screen.getByText(/m•••••@email.com confirmado/)).toBeInTheDocument();
   });
 
+  it("digitaliza o RG (frente e verso) pela câmera", async () => {
+    const user = await ateAssinatura();
+    await aceitarCcb(user);
+    await confirmarCodigo(user, "Código do e-mail");
+    await confirmarCodigo(user, "Código do SMS");
+    await user.click(await screen.findByText("RG"));
+    await user.click(screen.getByText("Fotografar o documento"));
+    await user.click(screen.getByRole("button", { name: /Abrir câmera/ }));
+    await user.click(await screen.findByRole("button", { name: "Simular sem câmera" }));
+    expect(screen.getByText("Encaixe a frente do RG na moldura")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Tirar foto da frente/ }));
+    await user.click(screen.getByRole("button", { name: /Usar foto e fotografar o verso/ }));
+    expect(screen.getByText("Encaixe o verso do RG na moldura")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Tirar foto do verso/ }));
+    await user.click(screen.getByRole("button", { name: /Tirar outra foto/ }));
+    await user.click(screen.getByRole("button", { name: /Tirar foto do verso/ }));
+    await user.click(screen.getByRole("button", { name: /Usar foto e enviar/ }));
+    await screen.findByText("RG validado por foto");
+  });
+
   it("acesso direto a ?step=4 cai no passo 1", async () => {
     window.history.replaceState(null, "", "/?step=4");
-    render(<App api={createMockApi({ latency: 0 })} />);
+    renderApp();
     expect(screen.getByRole("heading", { name: /Consignado privado/ })).toBeInTheDocument();
     expect(window.location.search).toBe("?step=1");
   });
 
-  it("voltar do navegador não pula gates", async () => {
-    await ateRecebimento();
+  it("voltar/avançar do navegador não pula gates", async () => {
+    // Sem chave Pix, o passo 4 ainda não está liberado.
+    await ateRecebimento("sem-chaves");
+    await screen.findByText("Não encontramos nenhuma chave Pix no seu CPF");
     act(() => {
       window.history.pushState(null, "", "/?step=4");
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -204,9 +266,9 @@ describe("jornada", () => {
     expect(window.location.search).toBe("?step=3");
   });
 
-  it("modal de termos abre e fecha com Esc", async () => {
+  it("modais de termos e LGPD abrem e fecham", async () => {
     const user = userEvent.setup();
-    render(<App api={createMockApi({ latency: 0 })} />);
+    renderApp();
     await user.click(screen.getAllByRole("button", { name: "Termo de consentimento" })[0]);
     expect(screen.getByRole("dialog", { name: "Termo de consentimento" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox")).not.toBeChecked();

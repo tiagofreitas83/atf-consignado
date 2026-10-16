@@ -74,7 +74,7 @@ export function EtapaCodigo({ flow: { state: s, actions: a, derived: d }, propos
         />
       </FieldSlot>
       {/* TEMPORÁRIO (demonstração): remover antes de produção. */}
-      <p className="m-0 -mt-3 text-[13px] leading-normal text-neutral-40">
+      <p className="m-0 text-[13px] leading-normal text-neutral-40">
         Exemplo para testar: qualquer código de 6 dígitos, como {CODIGO_EXEMPLO}.{" "}
         <button type="button" className="atf-link font-semibold" onClick={() => a.setCodigo(canal, CODIGO_EXEMPLO)} disabled={ocupado}>
           Preencher

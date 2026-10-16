@@ -1,14 +1,15 @@
 import { Button, Checkbox } from "../../../ds";
 import type { Proposta } from "../../../api/types";
 import { formatCpf } from "../../../lib/cpf";
-import { brl, mesAno, pct } from "../../../lib/format";
+import { banco, brl, mesAno, pct } from "../../../lib/format";
+import { ROTULO_CHAVE } from "../../../lib/pix";
 import type { Flow } from "../../useConsignado";
 
-export function EtapaCcb({ flow: { state: s, actions: a }, proposta: p }: { flow: Flow; proposta: Proposta }) {
-  const banco = s.pixResultado ? `${s.pixResultado.instituicao.nome} (${s.pixResultado.instituicao.codigo})` : "";
+export function EtapaCcb({ flow: { state: s, actions: a, derived: d }, proposta: p }: { flow: Flow; proposta: Proposta }) {
+  const destino = d.pixDestino;
   const clausulas = [
     ["Partes", `Emitente: ${p.trabalhador.nome}, CPF ${formatCpf(p.trabalhador.cpf)}. Credora: ATF SCD S.A., instituição 513.`],
-    ["Valor e liberação", `${brl(p.valor)} creditados via Pix na chave CPF da emitente, em ${banco}.`],
+    ["Valor e liberação", `${brl(p.valor)} creditados via Pix na chave ${destino ? ROTULO_CHAVE[destino.tipo] : ""} da emitente, em ${destino ? banco(destino.instituicao) : ""}.`],
     [
       "Encargos",
       `Taxa de ${pct(p.taxaMensal)} a.m. (${pct(p.taxaAnual)} a.a.), CET de ${pct(p.cetMensal)} a.m. (${pct(p.cetAnual)} a.a.) e IOF de ${brl(p.iof)}.`,

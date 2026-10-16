@@ -1,8 +1,15 @@
-import { CodigoInvalidoError, type ConsignadoApi, type Proposta } from "./types";
+import { CodigoInvalidoError, type ConsignadoApi, type DestinoPix, type InstituicaoPix, type Proposta } from "./types";
+
+/**
+ * Cenários da consulta Pix:
+ * - "cpf": o CPF é chave (no Nubank); depois de "Já movi", aparece no Inter (portabilidade).
+ * - "outras-chaves": o CPF não é chave, mas há chaves de celular/e-mail/aleatória.
+ * - "sem-chaves": nenhuma chave; depois de "Já criei", o CPF passa a ser chave.
+ */
+export type CenarioPix = "cpf" | "outras-chaves" | "sem-chaves";
 
 type MockOptions = {
-  /** "sem-chave": a primeira validação Pix devolve `notfound`. */
-  pixResultado?: "cadastrado" | "sem-chave";
+  pix?: CenarioPix;
   horasUteis?: number;
   /** Escala dos atrasos simulados (0 nos testes). */
   latency?: number;
@@ -17,7 +24,17 @@ const cents = (n: number) => Math.round(n * 100) / 100;
 // o protótipo arredondava para 308,35 / 11.100,42. O mock segue o README.
 const truncCents = (n: number) => Math.floor(n * 100) / 100;
 
-export function createMockApi({ pixResultado = "cadastrado", horasUteis = 2, latency = 1 }: MockOptions = {}): ConsignadoApi {
+const CPF_TITULAR = "12345678909";
+const TITULAR = "Mariana S. L.";
+const NUBANK: InstituicaoPix = { nome: "Nu Pagamentos S.A.", codigo: "260" };
+const INTER: InstituicaoPix = { nome: "Banco Inter S.A.", codigo: "077" };
+const ITAU: InstituicaoPix = { nome: "Itaú Unibanco S.A.", codigo: "341" };
+const CAIXA: InstituicaoPix = { nome: "Caixa Econômica Federal", codigo: "104" };
+const TENTATIVAS_CPF = 3;
+
+const destinoCpf = (instituicao: InstituicaoPix): DestinoPix => ({ tipo: "cpf", chaveMascarada: "***.456.789-**", instituicao, titularMascarado: TITULAR });
+
+export function createMockApi({ pix = "cpf", horasUteis = 2, latency = 1 }: MockOptions = {}): ConsignadoApi {
   const valor = 8000;
   const prazoMeses = 36;
   const taxaMensal = 0.0189;
@@ -39,26 +56,45 @@ export function createMockApi({ pixResultado = "cadastrado", horasUteis = 2, lat
     empregador: { razaoSocial: "Metalúrgica Aurora Ltda" },
     ccb: { numero: "513-2026-0048213" },
   };
-  let tentativasPix = 0;
+  let consultas = 0;
+  let tentativasCpf = TENTATIVAS_CPF;
+
+  // Chaves do titular para o cenário "outras-chaves" (e para "usar outra chave").
+  const chavesDoTitular: Record<string, InstituicaoPix> = {
+    "mariana.lima@email.com": INTER,
+    "+5511987654321": ITAU,
+  };
 
   return {
-    async getProposta() {
-      await wait(300 * latency);
-      return proposta;
-    },
     async registrarConsentimento() {
       await wait(200 * latency);
     },
-    async validarPix() {
+    async verificarCpf({ cpf }) {
+      await wait(700 * latency);
+      if (tentativasCpf <= 0) return { status: "bloqueado" };
+      if (cpf === CPF_TITULAR) return { status: "ok", proposta };
+      tentativasCpf--;
+      return tentativasCpf <= 0 ? { status: "bloqueado" } : { status: "nao-confere", tentativasRestantes: tentativasCpf };
+    },
+    async consultarPix() {
       await wait(1400 * latency);
-      const falha = pixResultado === "sem-chave" && tentativasPix === 0;
-      tentativasPix++;
-      if (falha) return { status: "notfound" };
-      return {
-        status: "ok",
-        instituicao: { nome: "Nu Pagamentos S.A.", codigo: "260" },
-        titularMascarado: "Mariana S. L. · CPF ***.456.789-**",
-      };
+      consultas++;
+      if (pix === "sem-chaves") return consultas === 1 ? { status: "sem-chaves" } : { status: "cpf", destino: destinoCpf(NUBANK) };
+      if (pix === "outras-chaves") return { status: "outras-chaves" };
+      return { status: "cpf", destino: destinoCpf(consultas === 1 ? NUBANK : INTER) };
+    },
+    async validarChavePix({ tipo, chave }) {
+      await wait(1200 * latency);
+      const mascara = (c: string) => (tipo === "email" ? c.replace(/^(.).*(@.*)$/, "$1•••••$2") : tipo === "celular" ? `(${c.slice(3, 5)}) •••••-${c.slice(-4)}` : `${c.slice(0, 8)}-••••`);
+      if (tipo === "cpf") return chave === CPF_TITULAR ? { status: "nao-encontrada" } : { status: "outro-titular" };
+      if (tipo === "cnpj") return { status: "outro-titular" };
+      if (tipo === "evp") {
+        if (chave.startsWith("00000000")) return { status: "nao-encontrada" };
+        return { status: "ok", destino: { tipo, chaveMascarada: mascara(chave), instituicao: CAIXA, titularMascarado: TITULAR } };
+      }
+      const banco = chavesDoTitular[chave];
+      if (!banco) return { status: "outro-titular" };
+      return { status: "ok", destino: { tipo, chaveMascarada: mascara(chave), instituicao: banco, titularMascarado: TITULAR } };
     },
     async enviarCodigo() {
       await wait(400 * latency);

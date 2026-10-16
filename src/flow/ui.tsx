@@ -32,8 +32,8 @@ export function ActionBar({ back, children }: { back: ReactNode; children: React
   );
 }
 
-/** Reserva o espaço do helper/erro do Input (que é position:absolute no DS). */
-export const FieldSlot = ({ children }: { children: ReactNode }) => <div className="pb-[22px]">{children}</div>;
+/** Envolve um Input. O helper/erro do Input fica no fluxo do layout, então não há espaço a reservar. */
+export const FieldSlot = ({ children }: { children: ReactNode }) => <div>{children}</div>;
 
 export const Tile = ({ tone, className = "", children }: { tone: "subtle" | "success" | "error" | "amber"; className?: string; children: ReactNode }) => {
   const bg = { subtle: "bg-neutral-95", success: "bg-success-90", error: "bg-error-90", amber: "bg-secondary-90" }[tone];

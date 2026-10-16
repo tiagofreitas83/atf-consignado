@@ -50,20 +50,12 @@ export function Intro({ flow: { state: s, actions: a } }: { flow: Flow }) {
             size="lg"
             rightIcon="arrowForward"
             fullWidth
-            disabled={!s.consent || !s.proposta || s.consentEnviando}
-            onClick={() => s.proposta && a.aceitarConsentimento(s.proposta.id)}
+            disabled={!s.consent || s.consentEnviando}
+            onClick={a.aceitarConsentimento}
           >
             Seguir
           </Button>
         </div>
-        {s.propostaErro && (
-          <p className="m-0 text-sm text-error-10" role="alert">
-            Não conseguimos carregar a sua proposta.{" "}
-            <button type="button" className="atf-link font-semibold" onClick={a.carregarProposta}>
-              Tentar novamente
-            </button>
-          </p>
-        )}
       </div>
     </section>
   );

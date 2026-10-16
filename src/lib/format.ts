@@ -25,6 +25,9 @@ export const celularMascarado = (digits: string) => `(${digits.slice(0, 2)}) •
 
 export const primeiroNome = (nome: string) => nome.split(" ")[0];
 
+/** "Nu Pagamentos S.A. (260)" */
+export const banco = (i: { nome: string; codigo: string }) => `${i.nome} (${i.codigo})`;
+
 export const emailValido = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 /** "mariana.lima@email.com" → "m•••••@email.com" */

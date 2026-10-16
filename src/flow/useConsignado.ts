@@ -5,17 +5,20 @@ import {
   type Assinatura,
   type Canal,
   type ConsignadoApi,
+  type DestinoPix,
   type Proposta,
   type OrigemDocumento,
   type TipoDocumento,
-  type ValidacaoPix,
 } from "../api/types";
 import { cpfValido } from "../lib/cpf";
 import { emailValido } from "../lib/format";
+import { detectarChave } from "../lib/pix";
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 export type Doc = "termos" | "privacidade" | "lgpd";
-export type PixStatus = "idle" | "loading" | "ok" | "notfound";
+export type ConsultaPixStatus = "idle" | "consultando" | "cpf" | "outras-chaves" | "sem-chaves" | "erro";
+export type ChaveStatus = "idle" | "validando" | "ok" | "outro-titular" | "nao-encontrada" | "erro";
+export type TutorialPix = "criar" | "trocar";
 
 /** Confirmação de um canal (e-mail ou SMS) por código de 6 dígitos. */
 export type Verificacao = {
@@ -47,15 +50,24 @@ const VERSAO_PRIVACIDADE = "2026-10-provisorio";
 type State = {
   step: Step;
   proposta: Proposta | null;
-  propostaErro: boolean;
   consent: boolean;
   consentEnviando: boolean;
+  /** CPF digitado no passo 2 para liberar a proposta. */
+  cpfInput: string;
+  cpfVerificando: boolean;
+  cpfErroApi: string | null;
+  cpfBloqueado: boolean;
   propostaConfirmada: boolean;
   doc: Doc | null;
-  cpfPix: string;
-  pix: PixStatus;
-  pixResultado: Extract<ValidacaoPix, { status: "ok" }> | null;
-  tutorial: boolean;
+  pixConsulta: ConsultaPixStatus;
+  /** Conta da chave CPF encontrada na consulta automática. */
+  pixCpfDestino: DestinoPix | null;
+  /** A pessoa preferiu informar outra chave (celular, e-mail ou aleatória). */
+  outraChave: boolean;
+  chaveInput: string;
+  chaveStatus: ChaveStatus;
+  chaveDestino: DestinoPix | null;
+  tutorial: TutorialPix | null;
   email: string;
   phone: string;
   ccbAceite: boolean;
@@ -72,26 +84,29 @@ type State = {
 
 type Action =
   | { type: "proposta"; proposta: Proposta }
-  | { type: "propostaErro" }
   | { type: "set"; patch: Partial<State> }
-  | { type: "cpfPix"; value: string }
   | { type: "email"; value: string }
   | { type: "phone"; value: string }
-  | { type: "verificacao"; canal: Canal; patch: Partial<Verificacao> }
-  | { type: "pixResultado"; resultado: ValidacaoPix };
+  | { type: "verificacao"; canal: Canal; patch: Partial<Verificacao> };
 
 const initial: State = {
   step: 1,
   proposta: null,
-  propostaErro: false,
   consent: false,
   consentEnviando: false,
+  cpfInput: "",
+  cpfVerificando: false,
+  cpfErroApi: null,
+  cpfBloqueado: false,
   propostaConfirmada: false,
   doc: null,
-  cpfPix: "",
-  pix: "idle",
-  pixResultado: null,
-  tutorial: false,
+  pixConsulta: "idle",
+  pixCpfDestino: null,
+  outraChave: false,
+  chaveInput: "",
+  chaveStatus: "idle",
+  chaveDestino: null,
+  tutorial: null,
   email: "",
   phone: "",
   ccbAceite: false,
@@ -113,18 +128,14 @@ function reducer(s: State, a: Action): State {
       return {
         ...s,
         proposta: a.proposta,
-        propostaErro: false,
+        cpfVerificando: false,
+        cpfErroApi: null,
         email: s.email || t.email || "",
         phone: s.phone || maskPhoneBR(t.celular ?? ""),
       };
     }
-    case "propostaErro":
-      return { ...s, propostaErro: true };
     case "set":
       return { ...s, ...a.patch };
-    case "cpfPix":
-      // Qualquer edição da chave invalida a validação anterior.
-      return { ...s, cpfPix: a.value, pix: "idle", pixResultado: null };
     case "email":
       // Trocar o contato desfaz a confirmação daquele canal.
       return a.value === s.email ? s : { ...s, email: a.value, emailVerif: VERIFICACAO_INICIAL };
@@ -134,26 +145,20 @@ function reducer(s: State, a: Action): State {
       const k = CHAVE_VERIFICACAO[a.canal];
       return { ...s, [k]: { ...s[k], ...a.patch } };
     }
-    case "pixResultado":
-      return a.resultado.status === "ok"
-        ? { ...s, pix: "ok", pixResultado: a.resultado }
-        : { ...s, pix: "notfound", pixResultado: null, tutorial: true };
   }
 }
 
-/** Erro do campo de CPF — só aparece com os 11 dígitos digitados. */
-function cpfErro(digits: string, titular: string | undefined) {
-  if (digits.length !== 11) return undefined;
-  if (!cpfValido(digits)) return "CPF inválido.";
-  if (titular && digits !== titular) return "A chave precisa ser o CPF do titular do crédito.";
-  return undefined;
+/** Conta para onde o crédito vai: a chave CPF encontrada ou a chave informada. */
+function destinoPix(s: State): DestinoPix | null {
+  if (s.pixConsulta === "cpf" && !s.outraChave) return s.pixCpfDestino;
+  return s.chaveStatus === "ok" ? s.chaveDestino : null;
 }
 
 /** Passo mais avançado que os pré-requisitos já liberam. */
 function maxStep(s: State, recebimentoOk: boolean): Step {
   if (s.assinatura) return 5;
-  if (!s.consent || !s.proposta) return 1;
-  if (!s.propostaConfirmada) return 2;
+  if (!s.consent) return 1;
+  if (!s.proposta || !s.propostaConfirmada) return 2;
   if (!recebimentoOk) return 3;
   return 4;
 }
@@ -167,28 +172,22 @@ function writeStepToUrl(step: Step, mode: "push" | "replace") {
   window.history[mode === "push" ? "pushState" : "replaceState"]({ step }, "", url);
 }
 
-export function useConsignado(api: ConsignadoApi) {
+/**
+ * @param token identificador opaco do link (www.atf.com.br/consignado/<token>);
+ *   só é repassado à API, nunca interpretado no front.
+ */
+export function useConsignado(api: ConsignadoApi, token: string) {
   const [s, dispatch] = useReducer(reducer, initial);
   const set = useCallback((patch: Partial<State>) => dispatch({ type: "set", patch }), []);
   const pixReq = useRef(0);
+  const chaveReq = useRef(0);
 
-  const carregarProposta = useCallback(() => {
-    set({ propostaErro: false });
-    api.getProposta().then(
-      (proposta) => dispatch({ type: "proposta", proposta }),
-      () => dispatch({ type: "propostaErro" }),
-    );
-  }, [api, set]);
-
-  useEffect(carregarProposta, [carregarProposta]);
-
-  const cpfDigits = onlyDigits(s.cpfPix);
-  const titular = s.proposta?.trabalhador.cpf;
+  const cpfInputDigits = onlyDigits(s.cpfInput);
   const phoneDigits = onlyDigits(s.phone);
   const emailOk = emailValido(s.email);
   const phoneOk = phoneDigits.length === 11;
-  const cpfDoTitular = cpfDigits.length === 11 && cpfValido(cpfDigits) && cpfDigits === titular;
-  const recebimentoOk = cpfDoTitular && s.pix === "ok";
+  const pixDestino = destinoPix(s);
+  const recebimentoOk = Boolean(pixDestino);
   const limite = maxStep(s, recebimentoOk);
   const concluidas: Record<EtapaAssinatura, boolean> = {
     ccb: s.ccbRevisada,
@@ -240,44 +239,94 @@ export function useConsignado(api: ConsignadoApi) {
     [api, s.email, phoneDigits],
   );
 
+  const consultarPix = useCallback(
+    async (propostaId: string) => {
+      const req = ++pixReq.current;
+      set({ pixConsulta: "consultando", outraChave: false, tutorial: null });
+      try {
+        const r = await api.consultarPix({ propostaId });
+        if (req !== pixReq.current) return;
+        set({
+          pixConsulta: r.status,
+          pixCpfDestino: r.status === "cpf" ? r.destino : null,
+          // Sem nenhuma chave: o passo a passo de criação já abre.
+          tutorial: r.status === "sem-chaves" ? "criar" : null,
+        });
+      } catch {
+        if (req === pixReq.current) set({ pixConsulta: "erro" });
+      }
+    },
+    [api, set],
+  );
+
   const actions = useMemo(
     () => ({
       setConsent: (consent: boolean) => set({ consent }),
       openDoc: (doc: Doc) => set({ doc }),
       closeDoc: () => set({ doc: null }),
 
-      async aceitarConsentimento(propostaId: string) {
+      async aceitarConsentimento() {
         set({ consentEnviando: true });
         try {
-          await api.registrarConsentimento({ propostaId, versaoTermos: VERSAO_TERMOS, versaoPrivacidade: VERSAO_PRIVACIDADE });
+          await api.registrarConsentimento({ token, versaoTermos: VERSAO_TERMOS, versaoPrivacidade: VERSAO_PRIVACIDADE });
           go(2);
         } finally {
           set({ consentEnviando: false });
         }
       },
 
-      confirmarProposta() {
-        set({ propostaConfirmada: true });
-        go(3);
-      },
+      setCpfInput: (cpfInput: string) => set({ cpfInput, cpfErroApi: null }),
 
-      setCpfPix: (value: string) => {
-        pixReq.current++; // descarta validação em andamento
-        dispatch({ type: "cpfPix", value });
-      },
-
-      async validarPix(propostaId: string, cpf: string) {
-        const req = ++pixReq.current;
-        set({ pix: "loading" });
+      /** Confere o CPF com o token; só então a proposta chega ao front. */
+      async verificarCpf() {
+        set({ cpfVerificando: true, cpfErroApi: null });
         try {
-          const resultado = await api.validarPix({ propostaId, cpf });
-          if (req === pixReq.current) dispatch({ type: "pixResultado", resultado });
+          const r = await api.verificarCpf({ token, cpf: cpfInputDigits });
+          if (r.status === "ok") return dispatch({ type: "proposta", proposta: r.proposta });
+          if (r.status === "bloqueado") return set({ cpfVerificando: false, cpfBloqueado: true });
+          const n = r.tentativasRestantes;
+          set({
+            cpfVerificando: false,
+            cpfErroApi: `Este CPF não confere com a proposta. Você ainda tem ${n} ${n === 1 ? "tentativa" : "tentativas"}.`,
+          });
         } catch {
-          if (req === pixReq.current) set({ pix: "idle" });
+          set({ cpfVerificando: false, cpfErroApi: "Não foi possível verificar agora. Tente novamente." });
         }
       },
 
-      toggleTutorial: () => set({ tutorial: !s.tutorial }),
+      confirmarProposta(propostaId: string) {
+        set({ propostaConfirmada: true });
+        go(3);
+        if (s.pixConsulta === "idle" || s.pixConsulta === "erro") consultarPix(propostaId);
+      },
+
+      consultarPix,
+
+      setOutraChave: (outraChave: boolean) => {
+        chaveReq.current++;
+        set({ outraChave, chaveInput: "", chaveStatus: "idle", chaveDestino: null });
+      },
+
+      setChave: (chaveInput: string) => {
+        chaveReq.current++; // descarta validação em andamento
+        set({ chaveInput, chaveStatus: "idle", chaveDestino: null });
+      },
+
+      async validarChave(propostaId: string) {
+        const chave = detectarChave(s.chaveInput);
+        if (!chave) return;
+        const req = ++chaveReq.current;
+        set({ chaveStatus: "validando", chaveDestino: null });
+        try {
+          const r = await api.validarChavePix({ propostaId, tipo: chave.tipo, chave: chave.normalizada });
+          if (req !== chaveReq.current) return;
+          set(r.status === "ok" ? { chaveStatus: "ok", chaveDestino: r.destino } : { chaveStatus: r.status });
+        } catch {
+          if (req === chaveReq.current) set({ chaveStatus: "erro" });
+        }
+      },
+
+      setTutorial: (tutorial: TutorialPix | null) => set({ tutorial }),
       setEmail: (value: string) => dispatch({ type: "email", value }),
       setPhone: (value: string) => dispatch({ type: "phone", value }),
 
@@ -356,18 +405,18 @@ export function useConsignado(api: ConsignadoApi) {
       /** Avança respeitando os gates. */
       next: () => s.step < limite && go((s.step + 1) as Step),
       back: () => go((s.step - 1) as Step),
-      carregarProposta,
     }),
-    [api, go, set, s.tutorial, s.step, s.emailVerif, s.documento, limite, enviarCodigo, carregarProposta],
+    [api, token, go, set, s.step, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, cpfInputDigits, limite, enviarCodigo, consultarPix],
   );
 
   return {
     state: s,
     actions,
     derived: {
-      cpfErro: cpfErro(cpfDigits, titular),
-      cpfDoTitular,
-      cpfDigits,
+      cpfInputDigits,
+      cpfInputOk: cpfInputDigits.length === 11 && cpfValido(cpfInputDigits),
+      cpfInputErro: cpfInputDigits.length === 11 && !cpfValido(cpfInputDigits) ? "CPF inválido." : undefined,
+      pixDestino,
       phoneDigits,
       emailOk,
       phoneOk,

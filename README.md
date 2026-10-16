@@ -1,7 +1,16 @@
 # ATF Consignado Privado
 
 Jornada de contratação de crédito consignado privado da ATF SCD S.A. (instituição 513), em 5 passos:
-boas-vindas/consentimento → proposta → recebimento (Pix CPF) → assinatura da CCB → protocolo.
+boas-vindas/consentimento → confirmação do CPF e proposta → recebimento (Pix) → assinatura da CCB → protocolo.
+
+**Link pessoal:** `www.atf.com.br/consignado/<token>`. O token é opaco (CPF cifrado no servidor) e só é
+repassado à API. Nenhum dado da proposta chega ao front antes de o CPF digitado conferir com o token
+(`POST /proposta/verificar`); 3 erros bloqueiam o link.
+
+**Recebimento:** CPF travado e consulta automática das chaves Pix do CPF. Se o CPF é chave, mostra o
+banco (com passo a passo para levar a chave a outro banco ou usar outra chave). Se não é, mas há
+outras chaves, um campo único reconhece celular, e-mail ou chave aleatória. Se não há nenhuma,
+aviso + tutorial de criação. Só é aceita chave Pix do CPF do trabalhador.
 
 A assinatura tem 5 etapas em sequência: revisar e aceitar a CCB → confirmar o e-mail (código) →
 confirmar o celular (código por SMS) → apresentar o documento com foto (CNH ou RG; enviado como PDF
@@ -22,7 +31,9 @@ npm test
 npm run build
 ```
 
-Simulação no mock: `?pix=sem-chave` (a primeira validação Pix falha) e `?horas=N` (prazo do Pix).
+Simulação no mock: `?pix=cpf` (padrão), `?pix=outras-chaves` ou `?pix=sem-chaves`, e `?horas=N`.
+CPF de teste: 123.456.789-09. Chaves do titular: `mariana.lima@email.com`, `(11) 98765-4321` ou
+qualquer chave aleatória.
 Código `000000` (e-mail ou SMS) simula código inválido. Sem câmera, a captura facial oferece
 "Simular sem câmera". Os atalhos "Preencher"/"usar documento de exemplo" são temporários.
 

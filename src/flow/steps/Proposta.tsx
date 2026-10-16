@@ -1,11 +1,93 @@
-import { Button } from "../../ds";
+import { Button, Icon, Input } from "../../ds";
 import type { Proposta as P } from "../../api/types";
 import { brl, capitalize, mesAno, primeiroNome, taxaAmAa } from "../../lib/format";
-import { ActionBar, StepColumn } from "../ui";
+import { ActionBar, FieldSlot, StepColumn, StepHeading, Tile } from "../ui";
 import type { Flow } from "../useConsignado";
 
-export function Proposta({ flow: { actions: a }, proposta: p }: { flow: Flow; proposta: P }) {
+const CPF_EXEMPLO = "123.456.789-09";
+
+/** Passo 2: o CPF confere com o link e só então a proposta aparece. */
+export function Proposta({ flow }: { flow: Flow }) {
+  return flow.state.proposta ? <DetalheProposta flow={flow} proposta={flow.state.proposta} /> : <ConfirmarCpf flow={flow} />;
+}
+
+function ConfirmarCpf({ flow: { state: s, actions: a, derived: d } }: { flow: Flow }) {
+  const bloqueado = s.cpfBloqueado;
+  const podeVerificar = d.cpfInputOk && !s.cpfVerificando && !bloqueado;
+
+  return (
+    <StepColumn label="Confirme o seu CPF">
+      <StepHeading
+        title="Confirme o seu CPF"
+        lead="Por segurança, os dados da sua proposta só aparecem depois que você confirma o CPF de quem vai contratar."
+      />
+
+      {bloqueado ? (
+        <Tile tone="error" className="flex flex-col gap-1 text-sm text-error-10" >
+          <span className="font-semibold" role="alert">
+            Bloqueamos este link por segurança
+          </span>
+          <span className="leading-normal text-pretty">
+            O CPF não conferiu depois de várias tentativas. Peça um novo link ao RH da sua empresa ou fale com a ATF.
+          </span>
+        </Tile>
+      ) : (
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (podeVerificar) a.verificarCpf();
+          }}
+        >
+          <FieldSlot>
+            <Input
+              label="CPF"
+              value={s.cpfInput}
+              onChange={a.setCpfInput}
+              mask="cpf"
+              placeholder="000.000.000-00"
+              errors={d.cpfInputErro ?? s.cpfErroApi ?? undefined}
+              disabled={s.cpfVerificando}
+              autoComplete="off"
+              autoFocus
+            />
+          </FieldSlot>
+          {/* TEMPORÁRIO (demonstração): remover antes de produção. */}
+          <p className="m-0 text-[13px] leading-normal text-neutral-40">
+            CPF de exemplo para testar: {CPF_EXEMPLO}.{" "}
+            <button type="button" className="atf-link font-semibold" onClick={() => a.setCpfInput(CPF_EXEMPLO)} disabled={s.cpfVerificando}>
+              Preencher
+            </button>
+          </p>
+          <div className="flex items-start gap-3 text-sm leading-normal text-neutral-40">
+            <span className="flex shrink-0 pt-px" aria-hidden="true">
+              <Icon name="shieldPerson" size={20} />
+            </span>
+            <span className="text-pretty">O link é pessoal. Se o CPF não conferir algumas vezes, ele é bloqueado.</span>
+          </div>
+        </form>
+      )}
+
+      <ActionBar
+        back={
+          <Button variant="text" size="md" onClick={a.back} disabled={s.cpfVerificando}>
+            Voltar
+          </Button>
+        }
+      >
+        {!bloqueado && (
+          <Button variant="brand" size="lg" rightIcon="arrowForward" fullWidth disabled={!podeVerificar} onClick={a.verificarCpf}>
+            {s.cpfVerificando ? "Verificando…" : "Ver minha proposta"}
+          </Button>
+        )}
+      </ActionBar>
+    </StepColumn>
+  );
+}
+
+function DetalheProposta({ flow: { actions: a }, proposta: p }: { flow: Flow; proposta: P }) {
   const rows: [string, string][] = [
+    ["Empresa", p.empregador.razaoSocial],
     ["Valor solicitado", brl(p.valor)],
     ["Prazo", `${p.prazoMeses} meses`],
     ["Taxa de juros", taxaAmAa(p.taxaMensal, p.taxaAnual)],
@@ -42,7 +124,7 @@ export function Proposta({ flow: { actions: a }, proposta: p }: { flow: Flow; pr
           </Button>
         }
       >
-        <Button variant="brand" size="lg" rightIcon="arrowForward" fullWidth onClick={a.confirmarProposta}>
+        <Button variant="brand" size="lg" rightIcon="arrowForward" fullWidth onClick={() => a.confirmarProposta(p.id)}>
           Confirmar proposta
         </Button>
       </ActionBar>
