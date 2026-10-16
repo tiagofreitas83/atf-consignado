@@ -4,6 +4,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  // GitHub Pages serve em /atf-consignado/; local continua em /.
+  base: process.env.BASE_PATH ?? "/",
   plugins: [react(), tailwindcss()],
   // node_modules é symlink para node_modules.nosync (iCloud); sem isso o Vite
   // não reconhece as deps como node_modules e não pré-empacota o React.
