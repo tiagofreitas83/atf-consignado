@@ -39,7 +39,7 @@ export const TUTORIAL_CRIAR_CHAVE: Passo[] = [
 export const tutorialTrocarBanco = (bancoAtual: string): Passo[] => [
   { title: "No banco novo, cadastre a mesma chave", text: "O app avisa que ela já está em outro banco e oferece trazê-la (portabilidade)." },
   { title: `Aprove no app do ${bancoAtual}`, text: "O banco atual pede a sua confirmação para liberar a chave. Sem ela, nada muda." },
-  { title: "Volte e verifique de novo", text: "A chave passa a apontar para o banco novo assim que você aprova." },
+  { title: "Volte aqui e siga", text: "Conferimos em qual banco a chave está antes de continuar." },
 ];
 
 export const STEP_LABELS = ["Boas-vindas", "Proposta", "Recebimento", "Assinatura", "Concluído"] as const;

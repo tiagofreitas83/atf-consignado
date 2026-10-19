@@ -55,13 +55,7 @@ const ABAS: { id: TutorialPix; rotulo: string }[] = [
 ];
 
 /** Ajuda de chave Pix: cadastrar uma chave nova ou levar uma chave existente para outro banco. */
-function AjudaChave({ aba, bancoAtual, onAba, onVerificar, onClose }: {
-  aba: TutorialPix;
-  bancoAtual: string;
-  onAba: (aba: TutorialPix) => void;
-  onVerificar: () => void;
-  onClose: () => void;
-}) {
+function AjudaChave({ aba, bancoAtual, onAba, onClose }: { aba: TutorialPix; bancoAtual: string; onAba: (aba: TutorialPix) => void; onClose: () => void }) {
   return (
     <Sheet title="Como preparar sua chave Pix" onClose={onClose}>
       <div role="tablist" aria-label="Tipo de ajuda" className="grid grid-cols-2 gap-1 rounded-full bg-neutral-95 p-1">
@@ -100,11 +94,6 @@ function AjudaChave({ aba, bancoAtual, onAba, onVerificar, onClose }: {
               <strong className="font-semibold">Depende da sua aprovação no banco atual.</strong> Com pressa? Cadastre uma chave nova no banco onde quer receber.
             </Tile>
             <Passos passos={tutorialTrocarBanco(bancoAtual)} />
-            <div className="flex">
-              <Button variant="neutral" size="sm" className="w-full sm:w-auto" onClick={onVerificar}>
-                Já aprovei, verificar de novo
-              </Button>
-            </div>
           </>
         )}
       </div>
@@ -318,7 +307,6 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
           bancoAtual={bancoAtual}
           onAba={a.setTutorial}
           onClose={() => a.setTutorial(null)}
-          onVerificar={reconsultar}
         />
       )}
     </StepColumn>

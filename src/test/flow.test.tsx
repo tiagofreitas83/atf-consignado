@@ -155,10 +155,9 @@ describe("recebimento", () => {
     expect(ajuda).toHaveTextContent("Aprove no app do Nu Pagamentos S.A.");
     await user.click(screen.getByRole("tab", { name: "Cadastrar chave nova" }));
     expect(ajuda).toHaveTextContent("Escolha celular, e-mail ou chave aleatória");
-    await user.click(screen.getByRole("tab", { name: "Mudar chave de banco" }));
-    await user.click(screen.getByRole("button", { name: "Já aprovei, verificar de novo" }));
+    expect(screen.queryByRole("button", { name: /verificar de novo/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Entendi" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(await screen.findByRole("radio", { name: /Banco Inter S\.A\. \(077\)/ })).toBeChecked();
   });
 
   it("CPF não é chave, mas há outras: reconhece o tipo e só aceita chave da pessoa", async () => {
