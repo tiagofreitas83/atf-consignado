@@ -69,13 +69,10 @@ export function App({ api, token }: { api: ConsignadoApi; token: string }) {
               www.atf.com.br
             </a>
             <button type="button" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("termos")}>
-              Termos de consentimento
+              Termo de consentimento
             </button>
             <button type="button" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("privacidade")}>
-              Política de Privacidade
-            </button>
-            <button type="button" className="atf-link inline-flex min-h-11 min-w-11 items-center text-left whitespace-nowrap !text-neutral-40 hover:!text-secondary-20" onClick={() => a.openDoc("lgpd")}>
-              LGPD
+              Política de Privacidade e LGPD
             </button>
           </nav>
         </div>

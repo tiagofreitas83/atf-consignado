@@ -15,7 +15,7 @@ import { emailValido } from "../lib/format";
 import { detectarChave } from "../lib/pix";
 
 export type Step = 1 | 2 | 3 | 4 | 5;
-export type Doc = "termos" | "privacidade" | "lgpd";
+export type Doc = "termos" | "privacidade";
 export type ConsultaPixStatus = "idle" | "consultando" | "cpf" | "outras-chaves" | "sem-chaves" | "erro";
 export type ChaveStatus = "idle" | "validando" | "ok" | "outro-titular" | "nao-encontrada" | "erro";
 export type TutorialPix = "criar" | "trocar";

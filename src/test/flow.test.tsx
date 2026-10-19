@@ -296,7 +296,7 @@ describe("jornada", () => {
     expect(window.location.search).toBe("?step=3");
   });
 
-  it("modais de termos e LGPD abrem e fecham", async () => {
+  it("modais de termo e de privacidade/LGPD abrem e fecham", async () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(screen.getAllByRole("button", { name: "Termo de consentimento" })[0]);
@@ -304,7 +304,7 @@ describe("jornada", () => {
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "LGPD" }));
-    expect(screen.getByRole("dialog", { name: "LGPD" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Política de Privacidade e LGPD" }));
+    expect(screen.getByRole("dialog", { name: "Política de Privacidade e LGPD" })).toBeInTheDocument();
   });
 });

@@ -2,7 +2,7 @@ import { DOCS } from "./content";
 import { Sheet } from "./Sheet";
 import type { Doc } from "./useConsignado";
 
-/** Modal de Termos/Privacidade/LGPD. */
+/** Modal de Termos e de Privacidade/LGPD. */
 export function DocModal({ doc, onClose }: { doc: Doc; onClose: () => void }) {
   const { title, paras } = DOCS[doc];
   return (

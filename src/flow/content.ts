@@ -9,18 +9,11 @@ export const DOCS = {
     ],
   },
   privacidade: {
-    title: "Política de privacidade",
+    title: "Política de Privacidade e LGPD",
     paras: [
-      "Tratamos seus dados pessoais conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), apenas para as finalidades informadas: análise de crédito, formalização, pagamento e prevenção à fraude.",
+      "Tratamos seus dados pessoais conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018), apenas para as finalidades informadas: análise de crédito, formalização, pagamento e prevenção à fraude.",
       "Seus dados são compartilhados somente com o empregador, instituições do arranjo Pix e órgãos reguladores, quando exigido.",
-      "Você pode solicitar acesso, correção ou eliminação dos seus dados pelo e-mail do nosso encarregado de proteção de dados.",
-    ],
-  },
-  lgpd: {
-    title: "LGPD",
-    paras: [
-      "A Lei Geral de Proteção de Dados (Lei nº 13.709/2018) garante a você, como titular, o direito de saber quais dados pessoais a ATF SCD S.A. trata, para quais finalidades e com quem eles são compartilhados.",
-      "Você pode, a qualquer momento, solicitar a confirmação do tratamento, o acesso, a correção, a anonimização, a portabilidade ou a eliminação dos seus dados, além de revogar consentimentos concedidos, nos limites da lei e das obrigações regulatórias do Banco Central.",
+      "Como titular, você pode, a qualquer momento, solicitar a confirmação do tratamento, o acesso, a correção, a anonimização, a portabilidade ou a eliminação dos seus dados, além de revogar consentimentos concedidos, nos limites da lei e das obrigações regulatórias do Banco Central.",
       "As solicitações são atendidas pelo nosso encarregado de proteção de dados (DPO), pelos canais oficiais de atendimento da ATF.",
     ],
   },
