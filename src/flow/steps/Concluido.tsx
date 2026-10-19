@@ -40,7 +40,7 @@ export function Concluido({ flow: { state: s, derived: d }, proposta: p }: { flo
   const envios: { icon: IconName; title: string; text: string }[] = [
     { icon: "chat", title: "SMS enviado", text: `Para ${s.phone}, com o protocolo e o link para acompanhar a contratação.` },
     { icon: "mail", title: "CCB assinada no seu e\u2011mail", text: `Enviamos a cédula em PDF para ${s.email}.` },
-    { icon: "pix", title: `Pix em até ${horas}`, text: "Avisamos por SMS assim que o valor for creditado na sua conta." },
+    { icon: "pix", title: `Pix em até ${horas}`, text: "Avisamos assim que o valor for creditado na sua conta." },
   ];
 
   return (
