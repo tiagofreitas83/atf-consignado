@@ -1,7 +1,7 @@
-import { useRef, useState, type ReactNode } from "react";
-import { Button, Icon, Radio, Spinner, type IconName } from "../../../ds";
+import { useRef, useState } from "react";
+import { Button, Spinner, type IconName } from "../../../ds";
 import type { OrigemDocumento, TipoDocumento } from "../../../api/types";
-import { Tile } from "../../ui";
+import { Opcao, Tile } from "../../ui";
 import type { Flow } from "../../useConsignado";
 import { DocumentCapture } from "./DocumentCapture";
 
@@ -25,28 +25,6 @@ const ORIGENS: Record<OrigemDocumento, { nome: string; detalhe: string; icon: Ic
 
 export const resumoDocumento = (tipo: TipoDocumento | null, origem: OrigemDocumento | null) =>
   tipo ? `${DOCUMENTOS[tipo].nome} validado${origem === "pdf" ? " pela carteira digital" : origem === "foto" ? " por foto" : ""}` : "";
-
-/** Opção selecionável (card com radio) — usada nas duas perguntas. */
-function Opcao({ name, checked, onChange, titulo, detalhe, icon }: { name: string; checked: boolean; onChange: () => void; titulo: string; detalhe: ReactNode; icon?: IconName }) {
-  return (
-    <label
-      className={`flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
-        checked ? "border-neutral-20 bg-neutral-100" : "border-neutral-90 [@media(hover:hover)]:hover:border-neutral-80"
-      }`}
-    >
-      <Radio name={name} checked={checked} onChange={onChange} />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-[15px] font-semibold">{titulo}</span>
-        <span className="text-sm leading-normal text-neutral-40 text-pretty">{detalhe}</span>
-      </span>
-      {icon && (
-        <span className="hidden shrink-0 text-neutral-40 min-[360px]:flex" aria-hidden="true">
-          <Icon name={icon} size={24} />
-        </span>
-      )}
-    </label>
-  );
-}
 
 /** Documento de identidade: CNH ou RG, enviado como PDF da carteira digital ou fotografado. */
 export function EtapaDocumento({ flow: { state: s, actions: a }, propostaId }: { flow: Flow; propostaId: string }) {

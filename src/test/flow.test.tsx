@@ -47,7 +47,7 @@ async function ateRecebimento(pix: CenarioPix = "cpf") {
 
 async function ateAssinatura() {
   const user = await ateRecebimento();
-  await screen.findByText("Encontramos a chave Pix do seu CPF");
+  await screen.findByRole("radio", { name: /Nu Pagamentos/ });
   await user.click(screen.getByRole("button", { name: /Seguir para assinatura/ }));
   await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
   return user;
@@ -126,28 +126,44 @@ describe("confirmação do CPF", () => {
 });
 
 describe("recebimento", () => {
-  it("CPF travado e banco da chave CPF encontrado automaticamente", async () => {
+  it("regra das chaves sempre visível e banco da chave CPF já escolhido", async () => {
     await ateRecebimento();
-    const cpf = screen.getByLabelText("CPF do titular");
-    expect(cpf).toHaveValue("123.456.789-09");
-    expect(cpf).toHaveAttribute("readonly");
-    await screen.findByText("Encontramos a chave Pix do seu CPF");
-    expect(screen.getByText("Nu Pagamentos S.A. (260)")).toBeInTheDocument();
+    expect(screen.getByText("Vale qualquer chave Pix sua, Mariana")).toBeInTheDocument();
+    expect(screen.queryByLabelText("CPF do titular")).not.toBeInTheDocument();
+    expect(await screen.findByRole("radio", { name: /Nu Pagamentos S\.A\. \(260\)/ })).toBeChecked();
     expect(screen.getByRole("button", { name: /Seguir para assinatura/ })).toBeEnabled();
   });
 
-  it("trocar de banco: passo a passo da portabilidade e nova verificação", async () => {
+  it("outro banco: escolhe a opção, informa outra chave e verifica", async () => {
     const user = await ateRecebimento();
-    await user.click(await screen.findByRole("button", { name: "Quero receber em outro banco" }));
-    expect(screen.getByText("Leve a chave CPF para o outro banco")).toBeInTheDocument();
-    expect(screen.getByText(/O Nu Pagamentos S\.A\. pede a sua confirmação/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Já movi, verificar de novo" }));
-    await screen.findByText("Banco Inter S.A. (077)");
+    await user.click(await screen.findByRole("radio", { name: /Outro banco/ }));
+    const proximo = screen.getByRole("button", { name: /Seguir para assinatura/ });
+    expect(proximo).toBeDisabled();
+    await user.type(screen.getByLabelText("Chave Pix"), "mariana.lima@email.com");
+    await user.click(screen.getByRole("button", { name: "Verificar chave" }));
+    await screen.findByText("Chave verificada");
+    expect(screen.getByText("Banco Inter S.A. (077)")).toBeInTheDocument();
+    expect(proximo).toBeEnabled();
   });
 
-  it("CPF sem chave, mas com outras: reconhece o tipo e só aceita chave do titular", async () => {
+  it("ajuda: cadastrar chave nova e mudar a chave CPF de banco", async () => {
+    const user = await ateRecebimento();
+    await user.click(await screen.findByRole("radio", { name: /Outro banco/ }));
+    await user.click(screen.getByRole("button", { name: "Quero levar a chave CPF" }));
+    const ajuda = screen.getByRole("dialog", { name: "Como preparar sua chave Pix" });
+    expect(screen.getByRole("tab", { name: "Mudar chave de banco" })).toHaveAttribute("aria-selected", "true");
+    expect(ajuda).toHaveTextContent("Aprove no app do Nu Pagamentos S.A.");
+    await user.click(screen.getByRole("tab", { name: "Cadastrar chave nova" }));
+    expect(ajuda).toHaveTextContent("Escolha celular, e-mail ou chave aleatória");
+    await user.click(screen.getByRole("tab", { name: "Mudar chave de banco" }));
+    await user.click(screen.getByRole("button", { name: "Já aprovei, verificar de novo" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(await screen.findByRole("radio", { name: /Banco Inter S\.A\. \(077\)/ })).toBeChecked();
+  });
+
+  it("CPF não é chave, mas há outras: reconhece o tipo e só aceita chave da pessoa", async () => {
     const user = await ateRecebimento("outras-chaves");
-    await screen.findByText("O seu CPF ainda não é uma chave Pix");
+    await screen.findByText("Encontramos chaves Pix suas, mas não a de CPF");
     const proximo = screen.getByRole("button", { name: /Seguir para assinatura/ });
     expect(proximo).toBeDisabled();
 
@@ -155,7 +171,7 @@ describe("recebimento", () => {
     await user.type(campo, "fulano@outro.com");
     expect(screen.getByText("Identificamos: E-mail · fulano@outro.com")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Verificar chave" }));
-    await screen.findByText(/Essa chave não está no CPF de Mariana/);
+    await screen.findByText(/Essa chave não está no seu nome, Mariana/);
     expect(proximo).toBeDisabled();
 
     await user.clear(campo);
@@ -169,11 +185,11 @@ describe("recebimento", () => {
 
   it("nenhuma chave: aviso, tutorial de criação e nova verificação", async () => {
     const user = await ateRecebimento("sem-chaves");
-    await screen.findByText("Não encontramos nenhuma chave Pix no seu CPF");
+    await screen.findByText("Você ainda não tem chave Pix");
     expect(screen.getByText("Como criar uma chave Pix")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Seguir para assinatura/ })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Já criei, verificar de novo" }));
-    await screen.findByText("Encontramos a chave Pix do seu CPF");
+    expect(await screen.findByRole("radio", { name: /Nu Pagamentos/ })).toBeChecked();
   });
 });
 
@@ -257,7 +273,7 @@ describe("jornada", () => {
   it("voltar/avançar do navegador não pula gates", async () => {
     // Sem chave Pix, o passo 4 ainda não está liberado.
     await ateRecebimento("sem-chaves");
-    await screen.findByText("Não encontramos nenhuma chave Pix no seu CPF");
+    await screen.findByText("Você ainda não tem chave Pix");
     act(() => {
       window.history.pushState(null, "", "/?step=4");
       window.dispatchEvent(new PopStateEvent("popstate"));

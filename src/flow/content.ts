@@ -28,19 +28,18 @@ export const DOCS = {
 
 export type Passo = { title: string; text: string };
 
+/** Cadastrar uma chave nova no banco onde a pessoa quer receber. Fica ativa na hora. */
 export const TUTORIAL_CRIAR_CHAVE: Passo[] = [
-  { title: "Abra o app do seu banco", text: "Use uma conta que esteja no seu nome e CPF." },
-  { title: "Entre em Pix › Minhas chaves", text: "O nome pode variar: Área Pix, Gerenciar chaves ou Cadastrar chave." },
-  { title: "Cadastre uma chave", text: "Recomendamos o CPF. Também valem celular, e-mail ou chave aleatória." },
-  { title: "Volte e verifique de novo", text: "A chave fica ativa na hora. Toque em “Já criei, verificar de novo”." },
+  { title: "Abra o app do banco onde quer receber", text: "A conta precisa estar no seu nome." },
+  { title: "Entre em Pix › Minhas chaves › Cadastrar", text: "O nome do menu muda de banco para banco." },
+  { title: "Escolha celular, e-mail ou chave aleatória", text: "Celular e e-mail são confirmados por código. A chave fica ativa na hora." },
 ];
 
-/** Portabilidade da chave CPF para outro banco. */
+/** Portabilidade: levar uma chave que a pessoa já tem para outro banco. */
 export const tutorialTrocarBanco = (bancoAtual: string): Passo[] => [
-  { title: "Abra o app do banco onde quer receber", text: "A conta precisa estar no seu nome e CPF." },
-  { title: "Cadastre o CPF como chave Pix", text: "O app avisa que a chave está em outro banco e oferece trazê-la (portabilidade)." },
-  { title: "Confirme no banco atual", text: `O ${bancoAtual} pede a sua confirmação para liberar a chave. Sem ela, a portabilidade não acontece.` },
-  { title: "Volte e verifique de novo", text: "Com a portabilidade concluída, toque em “Já movi, verificar de novo”." },
+  { title: "No banco novo, cadastre a mesma chave", text: "O app avisa que ela já está em outro banco e oferece trazê-la (portabilidade)." },
+  { title: `Aprove no app do ${bancoAtual}`, text: "O banco atual pede a sua confirmação para liberar a chave. Sem ela, nada muda." },
+  { title: "Volte e verifique de novo", text: "A chave passa a apontar para o banco novo assim que você aprova." },
 ];
 
 export const STEP_LABELS = ["Boas-vindas", "Proposta", "Recebimento", "Assinatura", "Concluído"] as const;

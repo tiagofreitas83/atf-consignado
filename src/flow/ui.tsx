@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Icon, Radio, type IconName } from "../ds";
 
 /** Coluna de 640px dos passos 2–5, com a entrada cpFade. */
 export function StepColumn({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
@@ -54,3 +55,25 @@ export const TextButton = ({ onClick, disabled, children }: { onClick: () => voi
 
 /** Linha de links de ação; quebra limpa no celular. */
 export const LinkRow = ({ children }: { children: ReactNode }) => <div className="flex flex-wrap items-center gap-x-6 -my-2">{children}</div>;
+
+/** Opção selecionável (card com radio). */
+export function Opcao({ name, checked, onChange, titulo, detalhe, icon }: { name: string; checked: boolean; onChange: () => void; titulo: string; detalhe: ReactNode; icon?: IconName }) {
+  return (
+    <label
+      className={`flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
+        checked ? "border-neutral-20 bg-neutral-100" : "border-neutral-90 [@media(hover:hover)]:hover:border-neutral-80"
+      }`}
+    >
+      <Radio name={name} checked={checked} onChange={onChange} />
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-[15px] font-semibold">{titulo}</span>
+        <span className="text-sm leading-normal text-neutral-40 text-pretty">{detalhe}</span>
+      </span>
+      {icon && (
+        <span className="hidden shrink-0 text-neutral-40 min-[360px]:flex" aria-hidden="true">
+          <Icon name={icon} size={24} />
+        </span>
+      )}
+    </label>
+  );
+}

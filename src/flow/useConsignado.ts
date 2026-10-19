@@ -67,6 +67,7 @@ type State = {
   chaveInput: string;
   chaveStatus: ChaveStatus;
   chaveDestino: DestinoPix | null;
+  /** Aba aberta na ajuda de chave Pix (sheet), ou null se fechada. */
   tutorial: TutorialPix | null;
   email: string;
   phone: string;
@@ -249,8 +250,6 @@ export function useConsignado(api: ConsignadoApi, token: string) {
         set({
           pixConsulta: r.status,
           pixCpfDestino: r.status === "cpf" ? r.destino : null,
-          // Sem nenhuma chave: o passo a passo de criação já abre.
-          tutorial: r.status === "sem-chaves" ? "criar" : null,
         });
       } catch {
         if (req === pixReq.current) set({ pixConsulta: "erro" });
