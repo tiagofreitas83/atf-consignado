@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button, Icon, Input, Spinner } from "../../ds";
 import type { DestinoPix, Proposta } from "../../api/types";
 import { banco, horasUteisLabel, primeiroNome } from "../../lib/format";
@@ -101,7 +102,7 @@ function AjudaChave({ aba, bancoAtual, onAba, onClose }: { aba: TutorialPix; ban
   );
 }
 
-/** Campo único de chave Pix: reconhece celular, e-mail, chave aleatória (e CPF/CNPJ). A verificação acontece ao seguir. */
+/** Campo único de chave Pix: reconhece celular, e-mail, chave aleatória (e CPF/CNPJ) e mostra o banco da chave. */
 function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flow; proposta: Proposta }) {
   const nome = primeiroNome(p.trabalhador.nome);
   const chave = detectarChave(s.chaveInput);
@@ -120,6 +121,15 @@ function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flo
   const erro = formatoErro ?? apiErro[s.chaveStatus];
   const validando = s.chaveStatus === "validando";
 
+  // Chave reconhecida: verifica sozinha logo que a pessoa para de digitar, para já mostrar o banco.
+  const pronta = s.chaveStatus === "idle" && chave && chave.tipo !== "cnpj";
+  const { verificarChave } = a;
+  useEffect(() => {
+    if (!pronta) return;
+    const t = setTimeout(() => verificarChave(p.id), 500);
+    return () => clearTimeout(t);
+  }, [pronta, s.chaveInput, verificarChave, p.id]);
+
   return (
     <div className="flex flex-col gap-3">
       <FieldSlot>
@@ -131,7 +141,6 @@ function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flo
           leftIcon="pix"
           errors={erro}
           description={chave && !erro ? `Identificamos: ${ROTULO_CHAVE[chave.tipo]} · ${chave.exibicao}` : undefined}
-          disabled={validando}
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
@@ -150,7 +159,7 @@ function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flo
           <span>Verificando a chave no diretório Pix…</span>
         </Tile>
       ) : (
-        s.chaveStatus === "ok" && s.chaveDestino && <DestinoOk destino={s.chaveDestino} titulo="Chave verificada" />
+        s.chaveStatus === "ok" && s.chaveDestino && <DestinoOk destino={s.chaveDestino} titulo="O valor vai para" />
       )}
     </div>
   );

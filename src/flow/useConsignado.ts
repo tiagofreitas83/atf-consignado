@@ -244,6 +244,25 @@ export function useConsignado(api: ConsignadoApi, token: string) {
     [api, s.email, phoneDigits],
   );
 
+  const verificarChave = useCallback(
+    async (propostaId: string) => {
+      const chave = detectarChave(s.chaveInput);
+      if (!chave || chave.tipo === "cnpj") return false;
+      const req = ++chaveReq.current;
+      set({ chaveStatus: "validando", chaveDestino: null });
+      try {
+        const r = await api.validarChavePix({ propostaId, tipo: chave.tipo, chave: chave.normalizada });
+        if (req !== chaveReq.current) return false;
+        set(r.status === "ok" ? { chaveStatus: "ok", chaveDestino: r.destino } : { chaveStatus: r.status });
+        return r.status === "ok";
+      } catch {
+        if (req === chaveReq.current) set({ chaveStatus: "erro" });
+        return false;
+      }
+    },
+    [api, set, s.chaveInput],
+  );
+
   const consultarPix = useCallback(
     async (propostaId: string) => {
       const req = ++pixReq.current;
@@ -315,22 +334,12 @@ export function useConsignado(api: ConsignadoApi, token: string) {
         set({ chaveInput, chaveStatus: "idle", chaveDestino: null });
       },
 
-      /** Segue para a assinatura; a chave informada é verificada aqui, e um erro fica no campo. */
+      /** Verifica a chave digitada no diretório Pix; devolve se ela é da pessoa. */
+      verificarChave,
+
+      /** Segue para a assinatura; se a chave ainda não foi verificada, verifica aqui, e um erro fica no campo. */
       async seguirRecebimento(propostaId: string) {
-        if (pixDestino) return go(4);
-        const chave = detectarChave(s.chaveInput);
-        if (!chave || chave.tipo === "cnpj") return;
-        const req = ++chaveReq.current;
-        set({ chaveStatus: "validando", chaveDestino: null });
-        try {
-          const r = await api.validarChavePix({ propostaId, tipo: chave.tipo, chave: chave.normalizada });
-          if (req !== chaveReq.current) return;
-          if (r.status !== "ok") return set({ chaveStatus: r.status });
-          set({ chaveStatus: "ok", chaveDestino: r.destino });
-          go(4);
-        } catch {
-          if (req === chaveReq.current) set({ chaveStatus: "erro" });
-        }
+        if (pixDestino || (await verificarChave(propostaId))) go(4);
       },
 
       setTutorial: (tutorial: TutorialPix | null) => set({ tutorial }),
@@ -413,7 +422,7 @@ export function useConsignado(api: ConsignadoApi, token: string) {
       next: () => s.step < limite && go((s.step + 1) as Step),
       back: () => go((s.step - 1) as Step),
     }),
-    [api, token, go, set, s.step, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, pixDestino, cpfInputDigits, limite, enviarCodigo, consultarPix],
+    [api, token, go, set, s.step, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, pixDestino, cpfInputDigits, limite, enviarCodigo, consultarPix, verificarChave],
   );
 
   return {

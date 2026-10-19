@@ -176,11 +176,11 @@ describe("recebimento", () => {
     await user.clear(campo);
     await user.type(campo, "(11) 98765-4321");
     expect(screen.getByText("Identificamos: Celular · (11) 98765-4321")).toBeInTheDocument();
+    // O banco aparece sozinho, sem precisar seguir.
+    await screen.findByText("Itaú Unibanco S.A. (341)", {}, { timeout: 3000 });
+    expect(screen.getByText("O valor vai para")).toBeInTheDocument();
     await user.click(proximo);
     await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
-    await user.click(screen.getByRole("button", { name: "Voltar" }));
-    await screen.findByText("Chave verificada");
-    expect(screen.getByText("Itaú Unibanco S.A. (341)")).toBeInTheDocument();
   });
 
   it("nenhuma chave: aviso, tutorial de criação e nova verificação", async () => {

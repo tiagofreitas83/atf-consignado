@@ -84,7 +84,7 @@ export function createMockApi({ pix = "cpf", horasUteis = 2, latency = 1 }: Mock
       return { status: "cpf", destino: destinoCpf(consultas === 1 ? NUBANK : INTER) };
     },
     async validarChavePix({ tipo, chave }) {
-      await wait(1200 * latency);
+      await wait(700 * latency);
       const mascara = (c: string) => (tipo === "email" ? c.replace(/^(.).*(@.*)$/, "$1•••••$2") : tipo === "celular" ? `(${c.slice(3, 5)}) •••••-${c.slice(-4)}` : `${c.slice(0, 8)}-••••`);
       if (tipo === "cpf") return chave === CPF_TITULAR ? { status: "nao-encontrada" } : { status: "outro-titular" };
       if (tipo === "cnpj") return { status: "outro-titular" };
