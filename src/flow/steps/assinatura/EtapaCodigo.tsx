@@ -1,10 +1,30 @@
+import { useEffect, useState } from "react";
 import { Button, Input, Spinner } from "../../../ds";
 import type { Canal } from "../../../api/types";
 import { celularMascarado, emailMascarado } from "../../../lib/format";
 import { FieldSlot, LinkRow, TextButton, Tile } from "../../ui";
-import type { Flow } from "../../useConsignado";
+import { REENVIO_SEGUNDOS, type Flow } from "../../useConsignado";
 
 const CODIGO_EXEMPLO = "123456";
+
+/** Segundos que faltam para liberar o reenvio, atualizado a cada segundo. */
+function useEsperaReenvio(enviadoEm: number | null) {
+  const calcular = () => (enviadoEm ? Math.max(0, REENVIO_SEGUNDOS - Math.floor((Date.now() - enviadoEm) / 1000)) : 0);
+  const [restante, setRestante] = useState(calcular);
+  useEffect(() => {
+    setRestante(calcular());
+    if (!enviadoEm) return;
+    const t = setInterval(() => {
+      const r = calcular();
+      setRestante(r);
+      if (r === 0) clearInterval(t);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [enviadoEm]);
+  return restante;
+}
+
+const relogio = (seg: number) => `0:${String(seg).padStart(2, "0")}`;
 
 /**
  * Confirmação de e-mail ou celular: a pessoa confere (ou corrige) o contato
@@ -16,6 +36,7 @@ export function EtapaCodigo({ flow: { state: s, actions: a, derived: d }, propos
   const destino = ehEmail ? emailMascarado(s.email) : celularMascarado(d.phoneDigits);
   const meio = ehEmail ? "e-mail" : "SMS";
   const ocupado = v.status === "confirmando";
+  const espera = useEsperaReenvio(v.enviadoEm);
 
   if (v.status === "pendente") {
     const contatoOk = ehEmail ? d.emailOk : d.phoneOk;
@@ -92,9 +113,15 @@ export function EtapaCodigo({ flow: { state: s, actions: a, derived: d }, propos
         </Button>
       </div>
       <LinkRow>
-        <TextButton onClick={() => a.enviarCodigo(propostaId, canal)} disabled={ocupado}>
-          Reenviar código
-        </TextButton>
+        {espera > 0 ? (
+          <span className="inline-flex min-h-11 items-center text-sm text-neutral-40" aria-live="off">
+            Reenviar código em <span className="ml-1 font-semibold tabular-nums text-neutral-20">{relogio(espera)}</span>
+          </span>
+        ) : (
+          <TextButton onClick={() => a.enviarCodigo(propostaId, canal)} disabled={ocupado}>
+            Reenviar código
+          </TextButton>
+        )}
         <TextButton onClick={() => a.alterarContato(canal)} disabled={ocupado}>
           {ehEmail ? "Alterar e\u2011mail" : "Alterar celular"}
         </TextButton>

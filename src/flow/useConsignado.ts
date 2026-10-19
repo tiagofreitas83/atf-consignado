@@ -25,7 +25,11 @@ export type Verificacao = {
   status: "pendente" | "enviando" | "enviado" | "confirmando" | "ok";
   codigo: string;
   erro: string | null;
+  /** Quando o último código saiu (ms); o reenvio só libera depois de REENVIO_SEGUNDOS. */
+  enviadoEm: number | null;
 };
+
+export const REENVIO_SEGUNDOS = 30;
 
 export type Documento = {
   tipo: TipoDocumento | null;
@@ -39,7 +43,7 @@ export type Documento = {
 export const ETAPAS_ASSINATURA = ["ccb", "email", "sms", "documento", "biometria"] as const;
 export type EtapaAssinatura = (typeof ETAPAS_ASSINATURA)[number];
 
-const VERIFICACAO_INICIAL: Verificacao = { status: "pendente", codigo: "", erro: null };
+const VERIFICACAO_INICIAL: Verificacao = { status: "pendente", codigo: "", erro: null, enviadoEm: null };
 const DOCUMENTO_INICIAL: Documento = { tipo: null, origem: null, status: "idle", titular: null, erro: null };
 const CHAVE_VERIFICACAO = { email: "emailVerif", sms: "smsVerif" } as const;
 
@@ -236,7 +240,7 @@ export function useConsignado(api: ConsignadoApi, token: string) {
       dispatch({ type: "verificacao", canal, patch: { status: "enviando", codigo: "", erro: null } });
       try {
         await api.enviarCodigo({ propostaId, canal, destino: canal === "email" ? s.email : phoneDigits });
-        dispatch({ type: "verificacao", canal, patch: { status: "enviado" } });
+        dispatch({ type: "verificacao", canal, patch: { status: "enviado", enviadoEm: Date.now() } });
       } catch {
         dispatch({ type: "verificacao", canal, patch: { status: "pendente", erro: "Não conseguimos enviar o código. Tente novamente." } });
       }

@@ -221,6 +221,20 @@ describe("jornada", () => {
     expect(screen.getByRole("button", { name: /Assinar CCB/ })).toBeDisabled();
   });
 
+  it("reenviar o código só libera depois de 30 segundos", async () => {
+    const user = await ateAssinatura();
+    await aceitarCcb(user);
+    const agora = Date.now();
+    const relogio = vi.spyOn(Date, "now").mockReturnValue(agora);
+    await user.click(screen.getByRole("button", { name: "Enviar código" }));
+    await screen.findByLabelText("Código do e-mail");
+    expect(screen.getByText(/Reenviar código em/)).toHaveTextContent("0:30");
+    expect(screen.queryByRole("button", { name: "Reenviar código" })).not.toBeInTheDocument();
+    relogio.mockReturnValue(agora + 30_000);
+    expect(await screen.findByRole("button", { name: "Reenviar código" }, { timeout: 2000 })).toBeEnabled();
+    relogio.mockRestore();
+  });
+
   it("e-mail inválido não deixa enviar o código; alterar o celular reabre a edição", async () => {
     const user = await ateAssinatura();
     await aceitarCcb(user);
