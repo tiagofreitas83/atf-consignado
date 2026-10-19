@@ -55,7 +55,6 @@ type State = {
   step: Step;
   proposta: Proposta | null;
   consent: boolean;
-  consentEnviando: boolean;
   /** CPF digitado no passo 2 para liberar a proposta. */
   cpfInput: string;
   cpfVerificando: boolean;
@@ -98,7 +97,6 @@ const initial: State = {
   step: 1,
   proposta: null,
   consent: false,
-  consentEnviando: false,
   cpfInput: "",
   cpfVerificando: false,
   cpfErroApi: null,
@@ -162,8 +160,8 @@ function destinoPix(s: State): DestinoPix | null {
 /** Passo mais avançado que os pré-requisitos já liberam. */
 function maxStep(s: State, recebimentoOk: boolean): Step {
   if (s.assinatura) return 5;
-  if (!s.consent) return 1;
-  if (!s.proposta || !s.propostaConfirmada) return 2;
+  if (!s.consent || !s.proposta) return 1;
+  if (!s.propostaConfirmada) return 2;
   if (!recebimentoOk) return 3;
   return 4;
 }
@@ -186,6 +184,7 @@ export function useConsignado(api: ConsignadoApi, token: string) {
   const set = useCallback((patch: Partial<State>) => dispatch({ type: "set", patch }), []);
   const pixReq = useRef(0);
   const chaveReq = useRef(0);
+  const consentRegistrado = useRef(false);
 
   const cpfInputDigits = onlyDigits(s.cpfInput);
   const phoneDigits = onlyDigits(s.phone);
@@ -291,29 +290,31 @@ export function useConsignado(api: ConsignadoApi, token: string) {
       openDoc: (doc: Doc) => set({ doc }),
       closeDoc: () => set({ doc: null }),
 
-      async aceitarConsentimento() {
-        set({ consentEnviando: true });
-        try {
-          await api.registrarConsentimento({ token, versaoTermos: VERSAO_TERMOS, versaoPrivacidade: VERSAO_PRIVACIDADE });
-          go(2);
-        } finally {
-          set({ consentEnviando: false });
-        }
-      },
-
       setCpfInput: (cpfInput: string) => set({ cpfInput, cpfErroApi: null }),
 
-      /** Confere o CPF com o token; só então a proposta chega ao front. */
-      async verificarCpf() {
+      /**
+       * "Seguir" da primeira página: registra o consentimento e confere o CPF
+       * com o token do link. Só com o CPF certo a proposta (nome, empresa,
+       * valores) chega ao front.
+       */
+      async seguirIntro() {
+        if (s.proposta) return go(2);
         set({ cpfVerificando: true, cpfErroApi: null });
         try {
+          if (!consentRegistrado.current) {
+            await api.registrarConsentimento({ token, versaoTermos: VERSAO_TERMOS, versaoPrivacidade: VERSAO_PRIVACIDADE });
+            consentRegistrado.current = true;
+          }
           const r = await api.verificarCpf({ token, cpf: cpfInputDigits });
-          if (r.status === "ok") return dispatch({ type: "proposta", proposta: r.proposta });
+          if (r.status === "ok") {
+            dispatch({ type: "proposta", proposta: r.proposta });
+            return go(2);
+          }
           if (r.status === "bloqueado") return set({ cpfVerificando: false, cpfBloqueado: true });
           const n = r.tentativasRestantes;
           set({
             cpfVerificando: false,
-            cpfErroApi: `Este CPF não confere com a proposta. Você ainda tem ${n} ${n === 1 ? "tentativa" : "tentativas"}.`,
+            cpfErroApi: `Este CPF não confere com o link. Você ainda tem ${n} ${n === 1 ? "tentativa" : "tentativas"}.`,
           });
         } catch {
           set({ cpfVerificando: false, cpfErroApi: "Não foi possível verificar agora. Tente novamente." });
@@ -426,7 +427,7 @@ export function useConsignado(api: ConsignadoApi, token: string) {
       next: () => s.step < limite && go((s.step + 1) as Step),
       back: () => go((s.step - 1) as Step),
     }),
-    [api, token, go, set, s.step, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, pixDestino, cpfInputDigits, limite, enviarCodigo, consultarPix, verificarChave],
+    [api, token, go, set, s.step, s.proposta, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, pixDestino, cpfInputDigits, limite, enviarCodigo, consultarPix, verificarChave],
   );
 
   return {

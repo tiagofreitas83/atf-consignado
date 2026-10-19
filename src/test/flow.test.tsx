@@ -22,18 +22,20 @@ async function ateConfirmarCpf(pix: CenarioPix = "cpf") {
   const user = userEvent.setup();
   renderApp(pix);
   expect(seguir()).toBeDisabled();
+  expect(screen.queryByLabelText("Seu CPF")).not.toBeInTheDocument();
   await user.click(screen.getByRole("checkbox"));
-  await waitFor(() => expect(seguir()).toBeEnabled());
-  await user.click(seguir());
-  await screen.findByRole("heading", { name: "Confirme o seu CPF" });
+  // O CPF aparece na própria página, depois do aceite; sem ele, "Seguir" não libera.
+  await screen.findByLabelText("Seu CPF");
+  expect(seguir()).toBeDisabled();
   return user;
 }
 
 async function verificarCpf(user: User, cpf: string) {
-  const campo = screen.getByLabelText("CPF");
+  const campo = screen.getByLabelText("Seu CPF");
   await user.clear(campo);
   await user.type(campo, cpf);
-  await user.click(screen.getByRole("button", { name: "Ver minha proposta" }));
+  await waitFor(() => expect(seguir()).toBeEnabled());
+  await user.click(seguir());
 }
 
 async function ateRecebimento(pix: CenarioPix = "cpf") {
@@ -99,12 +101,12 @@ describe("confirmação do CPF", () => {
     expect(screen.queryByText(/Metalúrgica/)).not.toBeInTheDocument();
     expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("CPF"), "11111111111");
+    await user.type(screen.getByLabelText("Seu CPF"), "11111111111");
     expect(screen.getByText("CPF inválido.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ver minha proposta" })).toBeDisabled();
+    expect(seguir()).toBeDisabled();
 
     await verificarCpf(user, "52998224725");
-    await screen.findByText("Este CPF não confere com a proposta. Você ainda tem 2 tentativas.");
+    await screen.findByText("Este CPF não confere com o link. Você ainda tem 2 tentativas.");
     expect(screen.queryByText(/Mariana/)).not.toBeInTheDocument();
 
     await verificarCpf(user, "12345678909");
@@ -120,8 +122,8 @@ describe("confirmação do CPF", () => {
     await screen.findByText(/1 tentativa\./);
     await verificarCpf(user, "52998224725");
     await screen.findByText("Bloqueamos este link por segurança");
-    expect(screen.queryByLabelText("CPF")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Ver minha proposta" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Seu CPF")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Seguir$/ })).not.toBeInTheDocument();
   });
 });
 
