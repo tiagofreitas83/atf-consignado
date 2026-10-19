@@ -189,6 +189,10 @@ export function useConsignado(api: ConsignadoApi, token: string) {
   const phoneOk = phoneDigits.length === 11;
   const pixDestino = destinoPix(s);
   const recebimentoOk = Boolean(pixDestino);
+  // Com uma chave digitada (ainda não verificada), "Seguir" já fica liberado e faz a verificação.
+  const informandoChave = s.pixConsulta === "outras-chaves" || (s.pixConsulta === "cpf" && s.outraChave);
+  const chaveDigitada = detectarChave(s.chaveInput);
+  const podeSeguirRecebimento = recebimentoOk || (informandoChave && Boolean(chaveDigitada) && chaveDigitada?.tipo !== "cnpj");
   const limite = maxStep(s, recebimentoOk);
   const concluidas: Record<EtapaAssinatura, boolean> = {
     ccb: s.ccbRevisada,
@@ -311,15 +315,19 @@ export function useConsignado(api: ConsignadoApi, token: string) {
         set({ chaveInput, chaveStatus: "idle", chaveDestino: null });
       },
 
-      async validarChave(propostaId: string) {
+      /** Segue para a assinatura; a chave informada é verificada aqui, e um erro fica no campo. */
+      async seguirRecebimento(propostaId: string) {
+        if (pixDestino) return go(4);
         const chave = detectarChave(s.chaveInput);
-        if (!chave) return;
+        if (!chave || chave.tipo === "cnpj") return;
         const req = ++chaveReq.current;
         set({ chaveStatus: "validando", chaveDestino: null });
         try {
           const r = await api.validarChavePix({ propostaId, tipo: chave.tipo, chave: chave.normalizada });
           if (req !== chaveReq.current) return;
-          set(r.status === "ok" ? { chaveStatus: "ok", chaveDestino: r.destino } : { chaveStatus: r.status });
+          if (r.status !== "ok") return set({ chaveStatus: r.status });
+          set({ chaveStatus: "ok", chaveDestino: r.destino });
+          go(4);
         } catch {
           if (req === chaveReq.current) set({ chaveStatus: "erro" });
         }
@@ -405,7 +413,7 @@ export function useConsignado(api: ConsignadoApi, token: string) {
       next: () => s.step < limite && go((s.step + 1) as Step),
       back: () => go((s.step - 1) as Step),
     }),
-    [api, token, go, set, s.step, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, cpfInputDigits, limite, enviarCodigo, consultarPix],
+    [api, token, go, set, s.step, s.emailVerif, s.documento, s.pixConsulta, s.chaveInput, pixDestino, cpfInputDigits, limite, enviarCodigo, consultarPix],
   );
 
   return {
@@ -422,6 +430,7 @@ export function useConsignado(api: ConsignadoApi, token: string) {
       emailErro: s.email && !emailOk ? "Informe um e-mail válido." : undefined,
       phoneErro: phoneDigits.length && !phoneOk ? "Informe o celular com DDD." : undefined,
       recebimentoOk,
+      podeSeguirRecebimento,
       concluidas,
       etapaAtual,
     },

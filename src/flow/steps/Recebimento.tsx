@@ -101,7 +101,7 @@ function AjudaChave({ aba, bancoAtual, onAba, onClose }: { aba: TutorialPix; ban
   );
 }
 
-/** Campo único de chave Pix: reconhece celular, e-mail, chave aleatória (e CPF/CNPJ). */
+/** Campo único de chave Pix: reconhece celular, e-mail, chave aleatória (e CPF/CNPJ). A verificação acontece ao seguir. */
 function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flow; proposta: Proposta }) {
   const nome = primeiroNome(p.trabalhador.nome);
   const chave = detectarChave(s.chaveInput);
@@ -149,20 +149,8 @@ function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flo
           <Spinner size="sm" label="Verificando" />
           <span>Verificando a chave no diretório Pix…</span>
         </Tile>
-      ) : s.chaveStatus === "ok" && s.chaveDestino ? (
-        <DestinoOk destino={s.chaveDestino} titulo="Chave verificada" />
       ) : (
-        <div className="flex">
-          <Button
-            variant="outline"
-            size="md"
-            className="w-full sm:w-auto"
-            disabled={!chave || chave.tipo === "cnpj"}
-            onClick={() => a.validarChave(p.id)}
-          >
-            Verificar chave
-          </Button>
-        </div>
+        s.chaveStatus === "ok" && s.chaveDestino && <DestinoOk destino={s.chaveDestino} titulo="Chave verificada" />
       )}
     </div>
   );
@@ -239,10 +227,14 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
             {s.outraChave && (
               <div className="flex flex-col gap-3 pt-2">
                 <OutraChave flow={flow} proposta={p} />
-                <LinkRow>
-                  <TextButton onClick={() => a.setTutorial("criar")}>Não tenho chave nesse banco</TextButton>
-                  <TextButton onClick={() => a.setTutorial("trocar")}>Quero levar a chave CPF</TextButton>
-                </LinkRow>
+                {/* Rotulado como tutorial: os links só explicam, não mudam nada na conta. */}
+                <div className="flex flex-col gap-1 pt-2">
+                  <span className="text-[13px] font-semibold tracking-[0.02em] text-neutral-40 uppercase">Tutorial</span>
+                  <LinkRow>
+                    <TextButton onClick={() => a.setTutorial("criar")}>Não tenho chave ainda</TextButton>
+                    <TextButton onClick={() => a.setTutorial("trocar")}>Quero mudar a chave de banco</TextButton>
+                  </LinkRow>
+                </div>
               </div>
             )}
           </>
@@ -296,7 +288,7 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
           </Button>
         }
       >
-        <Button variant="brand" size="lg" rightIcon="arrowForward" fullWidth disabled={!d.recebimentoOk} onClick={() => a.next()}>
+        <Button variant="brand" size="lg" rightIcon="arrowForward" fullWidth disabled={!d.podeSeguirRecebimento || s.chaveStatus === "validando"} onClick={() => a.seguirRecebimento(p.id)}>
           Seguir para assinatura
         </Button>
       </ActionBar>

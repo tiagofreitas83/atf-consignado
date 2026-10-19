@@ -134,22 +134,21 @@ describe("recebimento", () => {
     expect(screen.getByRole("button", { name: /Seguir para assinatura/ })).toBeEnabled();
   });
 
-  it("outro banco: escolhe a opção, informa outra chave e verifica", async () => {
+  it("outro banco: escolhe a opção, informa outra chave e a verificação acontece ao seguir", async () => {
     const user = await ateRecebimento();
     await user.click(await screen.findByRole("radio", { name: /Outro banco/ }));
     const proximo = screen.getByRole("button", { name: /Seguir para assinatura/ });
     expect(proximo).toBeDisabled();
     await user.type(screen.getByLabelText("Chave Pix"), "mariana.lima@email.com");
-    await user.click(screen.getByRole("button", { name: "Verificar chave" }));
-    await screen.findByText("Chave verificada");
-    expect(screen.getByText("Banco Inter S.A. (077)")).toBeInTheDocument();
     expect(proximo).toBeEnabled();
+    await user.click(proximo);
+    await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
   });
 
   it("ajuda: cadastrar chave nova e mudar a chave CPF de banco", async () => {
     const user = await ateRecebimento();
     await user.click(await screen.findByRole("radio", { name: /Outro banco/ }));
-    await user.click(screen.getByRole("button", { name: "Quero levar a chave CPF" }));
+    await user.click(screen.getByRole("button", { name: "Quero mudar a chave de banco" }));
     const ajuda = screen.getByRole("dialog", { name: "Como preparar sua chave Pix" });
     expect(screen.getByRole("tab", { name: "Mudar chave de banco" })).toHaveAttribute("aria-selected", "true");
     expect(ajuda).toHaveTextContent("Aprove no app do Nu Pagamentos S.A.");
@@ -169,17 +168,18 @@ describe("recebimento", () => {
     const campo = screen.getByLabelText("Chave Pix");
     await user.type(campo, "fulano@outro.com");
     expect(screen.getByText("Identificamos: E-mail · fulano@outro.com")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Verificar chave" }));
+    await user.click(proximo);
     await screen.findByText(/Essa chave não está no seu nome, Mariana/);
-    expect(proximo).toBeDisabled();
+    expect(screen.getByRole("heading", { name: "Onde você quer receber?" })).toBeInTheDocument();
 
     await user.clear(campo);
     await user.type(campo, "(11) 98765-4321");
     expect(screen.getByText("Identificamos: Celular · (11) 98765-4321")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Verificar chave" }));
+    await user.click(proximo);
+    await screen.findByRole("heading", { name: /Assine a sua Cédula/ });
+    await user.click(screen.getByRole("button", { name: "Voltar" }));
     await screen.findByText("Chave verificada");
     expect(screen.getByText("Itaú Unibanco S.A. (341)")).toBeInTheDocument();
-    expect(proximo).toBeEnabled();
   });
 
   it("nenhuma chave: aviso, tutorial de criação e nova verificação", async () => {
