@@ -126,9 +126,9 @@ describe("confirmação do CPF", () => {
 });
 
 describe("recebimento", () => {
-  it("regra das chaves sempre visível e banco da chave CPF já escolhido", async () => {
+  it("banco da chave CPF já escolhido; regra das chaves só em outro banco", async () => {
     await ateRecebimento();
-    expect(screen.getByText("Vale qualquer chave Pix sua, Mariana")).toBeInTheDocument();
+    expect(screen.queryByText("Vale qualquer chave Pix sua, Mariana")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("CPF do titular")).not.toBeInTheDocument();
     expect(await screen.findByRole("radio", { name: /Nu Pagamentos S\.A\. \(260\)/ })).toBeChecked();
     expect(screen.getByRole("button", { name: /Seguir para assinatura/ })).toBeEnabled();
@@ -137,6 +137,7 @@ describe("recebimento", () => {
   it("outro banco: escolhe a opção, informa outra chave e a verificação acontece ao seguir", async () => {
     const user = await ateRecebimento();
     await user.click(await screen.findByRole("radio", { name: /Outro banco/ }));
+    expect(screen.getByText("Vale qualquer chave Pix sua, Mariana")).toBeInTheDocument();
     const proximo = screen.getByRole("button", { name: /Seguir para assinatura/ });
     expect(proximo).toBeDisabled();
     await user.type(screen.getByLabelText("Chave Pix"), "mariana.lima@email.com");

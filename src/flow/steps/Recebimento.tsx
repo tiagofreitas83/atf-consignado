@@ -156,6 +156,27 @@ function OutraChave({ flow: { state: s, actions: a }, proposta: p }: { flow: Flo
   );
 }
 
+/** Regra das chaves aceitas + tutoriais. Aparece quando a pessoa vai informar uma chave. */
+function RegraChaves({ nome, onTutorial }: { nome: string; onTutorial: (aba: TutorialPix) => void }) {
+  return (
+    <Tile tone="subtle" className="flex items-start gap-3">
+      <span className="flex shrink-0 pt-px" aria-hidden="true">
+        <Icon name="pix" size={24} />
+      </span>
+      <div className="flex min-w-0 flex-col gap-1 text-sm">
+        <span className="font-semibold">Vale qualquer chave Pix sua, {nome}</span>
+        <span className="leading-normal text-neutral-40 text-pretty">CPF, celular, e-mail ou chave aleatória, em qualquer banco. Só precisa ser sua.</span>
+        {/* Rotulado como tutorial: os links só explicam, não mudam nada na conta. */}
+        <span className="pt-3 text-[13px] font-semibold tracking-[0.02em] text-neutral-40 uppercase">Tutorial</span>
+        <LinkRow>
+          <TextButton onClick={() => onTutorial("criar")}>Não tenho chave ainda</TextButton>
+          <TextButton onClick={() => onTutorial("trocar")}>Quero mudar a chave de banco</TextButton>
+        </LinkRow>
+      </div>
+    </Tile>
+  );
+}
+
 export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Proposta }) {
   const { state: s, actions: a, derived: d } = flow;
   const nome = primeiroNome(p.trabalhador.nome);
@@ -167,18 +188,6 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
   return (
     <StepColumn label="Recebimento">
       <StepHeading title="Onde você quer receber?" lead="O valor vai por Pix, direto para uma conta no seu nome." />
-
-      {/* Regra sempre visível: qualquer chave da pessoa vale, em qualquer banco. */}
-      <Tile tone="subtle" className="flex items-start gap-3">
-        <span className="flex shrink-0 pt-px" aria-hidden="true">
-          <Icon name="pix" size={24} />
-        </span>
-        <div className="flex min-w-0 flex-col gap-1 text-sm">
-          <span className="font-semibold">Vale qualquer chave Pix sua, {nome}</span>
-          <span className="leading-normal text-neutral-40 text-pretty">CPF, celular, e-mail ou chave aleatória, em qualquer banco. Só precisa ser sua.</span>
-          <TextButton onClick={() => a.setTutorial("criar")}>Como cadastrar ou mudar uma chave</TextButton>
-        </div>
-      </Tile>
 
       <div aria-live="polite" className="flex flex-col gap-3">
         {consultando && (
@@ -226,15 +235,8 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
 
             {s.outraChave && (
               <div className="flex flex-col gap-3 pt-2">
+                <RegraChaves nome={nome} onTutorial={a.setTutorial} />
                 <OutraChave flow={flow} proposta={p} />
-                {/* Rotulado como tutorial: os links só explicam, não mudam nada na conta. */}
-                <div className="flex flex-col gap-1 pt-2">
-                  <span className="text-[13px] font-semibold tracking-[0.02em] text-neutral-40 uppercase">Tutorial</span>
-                  <LinkRow>
-                    <TextButton onClick={() => a.setTutorial("criar")}>Não tenho chave ainda</TextButton>
-                    <TextButton onClick={() => a.setTutorial("trocar")}>Quero mudar a chave de banco</TextButton>
-                  </LinkRow>
-                </div>
               </div>
             )}
           </>
@@ -247,8 +249,8 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
               <span className="font-semibold">Encontramos chaves Pix suas, mas não a de CPF</span>
               <span className="leading-normal text-pretty">Sem problema: informe uma delas para conferirmos o banco.</span>
             </Tile>
+            <RegraChaves nome={nome} onTutorial={a.setTutorial} />
             <OutraChave flow={flow} proposta={p} />
-            <TextButton onClick={() => a.setTutorial("criar")}>Não lembro das minhas chaves</TextButton>
           </>
         )}
 
