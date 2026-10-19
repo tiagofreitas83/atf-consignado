@@ -244,8 +244,8 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
 
             {s.outraChave && (
               <div className="flex flex-col gap-3 pt-2">
-                <RegraChaves nome={nome} onTutorial={a.setTutorial} />
                 <OutraChave flow={flow} proposta={p} />
+                <RegraChaves nome={nome} onTutorial={a.setTutorial} />
               </div>
             )}
           </>
@@ -258,8 +258,8 @@ export function Recebimento({ flow, proposta: p }: { flow: Flow; proposta: Propo
               <span className="font-semibold">Encontramos chaves Pix suas, mas não a de CPF</span>
               <span className="leading-normal text-pretty">Sem problema: informe uma delas para conferirmos o banco.</span>
             </Tile>
-            <RegraChaves nome={nome} onTutorial={a.setTutorial} />
             <OutraChave flow={flow} proposta={p} />
+            <RegraChaves nome={nome} onTutorial={a.setTutorial} />
           </>
         )}
 
